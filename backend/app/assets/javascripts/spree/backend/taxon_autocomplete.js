@@ -32,7 +32,6 @@ $.fn.taxonAutocomplete = function () {
             q: {
               name_cont: term
             },
-            token: Spree.api_key
           };
         },
         results: function (data, page) {

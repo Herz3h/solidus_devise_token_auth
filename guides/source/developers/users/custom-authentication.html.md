@@ -77,8 +77,6 @@ If you use the `spree:custom_user` generator:
 Solidus requires that your `User` model's database table includes at least the
 following columns:
 
-- `spree_api_key`: A string with a user's API key. This should be limited to 48
-  characters.
 - `bill_address_id`: An integer that provides the ID of the `Spree::Address`
   that should be used as the current user's billing address.
 - `ship_address_id`: An integer that provides the ID of the `Spree::Address`

@@ -4,7 +4,6 @@ module Spree
   module UserMethods
     extend ActiveSupport::Concern
 
-    include Spree::UserApiAuthentication
     include Spree::UserReporting
     include Spree::UserAddressBook
     include Spree::UserPaymentSource
@@ -30,8 +29,6 @@ module Spree
       has_many :credit_cards, class_name: "Spree::CreditCard", foreign_key: :user_id
       has_many :wallet_payment_sources, foreign_key: 'user_id', class_name: 'Spree::WalletPaymentSource', inverse_of: :user
 
-      after_create :auto_generate_spree_api_key
-
       include Spree::RansackableAttributes unless included_modules.include?(Spree::RansackableAttributes)
 
       self.whitelisted_ransackable_associations = %w[addresses spree_roles]
@@ -45,14 +42,6 @@ module Spree
     # has_spree_role? simply needs to return true or false whether a user has a role or not.
     def has_spree_role?(role_in_question)
       spree_roles.any? { |role| role.name == role_in_question.to_s }
-    end
-
-    def auto_generate_spree_api_key
-      return if !respond_to?(:spree_api_key) || spree_api_key.present?
-
-      if Spree::Config.generate_api_key_for_all_roles || (spree_roles.map(&:name) & Spree::Config.roles_for_auto_api_key).any?
-        generate_spree_api_key!
-      end
     end
 
     # @return [Spree::Order] the most-recently-created incomplete order

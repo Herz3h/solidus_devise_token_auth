@@ -25,4 +25,9 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'kaminari-activerecord', '~> 1.1'
   gem.add_dependency 'responders'
   gem.add_dependency 'solidus_core', gem.version
+
+  # it's simply the latest rubygems published version
+  # at the time of writing it,
+  # feel free to update
+  gem.add_dependency 'devise_token_auth', '~> 1.0.0rc2'
 end

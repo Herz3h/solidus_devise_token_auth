@@ -41,22 +41,6 @@ describe Spree::Admin::UsersController, type: :controller do
         expect(response).to be_successful
       end
 
-      it "allows admins to update a user's API key" do
-        expect {
-          put :generate_api_key, params: { id: user.id }
-        }.to change { user.reload.spree_api_key }
-        expect(response).to redirect_to(spree.edit_admin_user_path(user))
-      end
-
-      it "allows admins to clear a user's API key" do
-        user.generate_spree_api_key!
-        expect {
-          put :clear_api_key, params: { id: user.id }
-        }.to change{ user.reload.spree_api_key }.to(nil)
-        expect(response).to redirect_to(spree.edit_admin_user_path(user))
-      end
-    end
-
     context "without ability to admin users" do
       stub_authorization! do |_user|
       end

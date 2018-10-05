@@ -10,12 +10,6 @@ FactoryBot.define do
     password { 'secret' }
     password_confirmation { password }
 
-    trait :with_api_key do
-      after(:create) do |user, _|
-        user.generate_spree_api_key!
-      end
-    end
-
     factory :admin_user do
       spree_roles { [Spree::Role.find_by(name: 'admin') || create(:role, name: 'admin')] }
     end

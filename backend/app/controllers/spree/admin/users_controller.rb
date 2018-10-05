@@ -79,20 +79,6 @@ module Spree
         @orders = @search.result.page(params[:page]).per(Spree::Config[:admin_products_per_page])
       end
 
-      def generate_api_key
-        if @user.generate_spree_api_key!
-          flash[:success] = t('spree.api.key_generated')
-        end
-        redirect_to edit_admin_user_path(@user)
-      end
-
-      def clear_api_key
-        if @user.clear_spree_api_key!
-          flash[:success] = t('spree.api.key_cleared')
-        end
-        redirect_to edit_admin_user_path(@user)
-      end
-
       def model_class
         Spree.user_class
       end

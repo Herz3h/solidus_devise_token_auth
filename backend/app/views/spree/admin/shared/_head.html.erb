@@ -43,7 +43,6 @@
 <%= render "spree/admin/shared/js_locale_data" %>
 
 <%= javascript_tag do -%>
-  Spree.api_key = "<%= try_spree_current_user.try(:spree_api_key) %>";
   Spree.env = "<%= Rails.env %>";
 <% end %>
 

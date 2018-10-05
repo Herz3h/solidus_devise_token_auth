@@ -15,7 +15,6 @@ $.fn.productAutocomplete = function (options) {
     initSelection: function (element, callback) {
       $.get(Spree.routes.admin_product_search, {
         ids: element.val().split(','),
-        token: Spree.api_key
       }, function (data) {
         callback(multiple ? data.products : data.products[0]);
       });
@@ -23,7 +22,6 @@ $.fn.productAutocomplete = function (options) {
     ajax: {
       url: Spree.routes.admin_product_search,
       datatype: 'json',
-      params: { "headers": { "X-Spree-Token": Spree.api_key } },
       data: function (term, page) {
         return {
           q: {
@@ -31,7 +29,6 @@ $.fn.productAutocomplete = function (options) {
             variants_including_master_sku_start: term,
             m: 'or'
           },
-          token: Spree.api_key,
           page: page
         };
       },

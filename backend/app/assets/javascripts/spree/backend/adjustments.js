@@ -9,7 +9,6 @@ Spree.ready(function() {
       url: Spree.routes.apply_coupon_code(window.order_number),
       data: {
         coupon_code: $("#coupon_code").val(),
-        token: Spree.api_key
       },
       success: function() {
         window.location.reload();

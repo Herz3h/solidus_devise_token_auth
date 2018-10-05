@@ -132,11 +132,6 @@ module Spree
     #      prices are entered in the backend (default: nil)
     preference :admin_vat_country_iso, :string, default: nil
 
-    # @!attribute [rw] generate_api_key_for_all_roles
-    #   @return [Boolean] Allow generating api key automatically for user
-    #   at role_user creation for all roles. (default: +false+)
-    preference :generate_api_key_for_all_roles, :boolean, default: false
-
     # @!attribute [rw] layout
     #   @return [String] template to use for layout on the frontend (default: +"spree/layouts/spree_application"+)
     preference :layout, :string, default: 'spree/layouts/spree_application'
@@ -193,12 +188,6 @@ module Spree
     # @!attribute [rw] return_eligibility_number_of_days
     #   @return [Integer] default: 365
     preference :return_eligibility_number_of_days, :integer, default: 365
-
-    # @!attribute [rw] roles_for_auto_api_key
-    #   @return [Array] An array of roles where generating an api key for a user
-    #   at role_user creation is desired when user has one of these roles.
-    #   (default: +['admin']+)
-    preference :roles_for_auto_api_key, :array, default: ['admin']
 
     # @!attribute [rw] shipping_instructions
     #   @return [Boolean] Request instructions/info for shipping (default: +false+)

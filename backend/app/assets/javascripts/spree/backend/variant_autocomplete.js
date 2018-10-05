@@ -24,17 +24,11 @@
         url: Spree.routes.variants_api,
         datatype: "json",
         quietMillis: 500,
-        params: {
-          "headers": {
-            "X-Spree-Token": Spree.api_key
-          }
-        },
         data: function(term, page) {
           var searchData = {
             q: {
               product_name_or_sku_cont: term
             },
-            token: Spree.api_key
           };
           return _.extend(searchData, searchOptions);
         },

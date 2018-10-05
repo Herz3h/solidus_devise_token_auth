@@ -40,4 +40,9 @@ Gem::Specification.new do |s|
   s.add_dependency 'paranoia', '~> 2.4'
   s.add_dependency 'ransack', '~> 2.0'
   s.add_dependency 'state_machines-activerecord', '~> 0.4'
+
+  # it's simply the latest rubygems published version
+  # at the time of writing it,
+  # feel free to update
+  s.add_dependency 'devise_token_auth', '~> 1.0.0rc2'
 end

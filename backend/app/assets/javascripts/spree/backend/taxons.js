@@ -28,11 +28,6 @@ Spree.ready(function() {
     placeholder: Spree.translations.find_a_taxon,
     ajax: {
       url: Spree.routes.taxons_search,
-      params: {
-        "headers": {
-          "X-Spree-Token": Spree.api_key
-        }
-      },
       data: function(term, page) {
         return {
           per_page: 50,

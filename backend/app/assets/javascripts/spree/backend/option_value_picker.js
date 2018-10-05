@@ -16,7 +16,6 @@ $.fn.optionValueAutocomplete = function (options) {
     initSelection: function (element, callback) {
       $.get(Spree.routes.option_value_search, {
         ids: element.val().split(','),
-        token: Spree.api_key
       }, function (data) {
         callback(multiple ? data : data[0]);
       });
@@ -32,7 +31,6 @@ $.fn.optionValueAutocomplete = function (options) {
             name_cont: term,
             variants_product_id_eq: productId
           },
-          token: Spree.api_key
         };
       },
       results: function (data, page) {
