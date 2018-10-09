@@ -13,6 +13,7 @@ module Spree
 
       it "retrieves a list of products" do
         get spree.api_products_path
+
         expect(json_response["products"].first).to have_attributes(attributes)
         expect(json_response["count"]).to eq(1)
         expect(json_response["current_page"]).to eq(1)

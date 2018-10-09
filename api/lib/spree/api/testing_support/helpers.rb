@@ -25,7 +25,9 @@ module Spree
 
         def stub_authentication!
           raise NotImplementedError
-          # allow(Spree.user_class).to receive(:find_by).with(hash_including(:spree_api_key)) { current_api_user }
+
+          # allow(Spree.user_class).to receive(:find_by).with(hash_including(:uid)) { current_api_user }
+          # allow_any_instance_of(Spree.user_class).to receive(:valid_token?).and_return(true)
         end
 
         # This method can be overriden (with a let block) inside a context

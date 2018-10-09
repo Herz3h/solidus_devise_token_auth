@@ -20,7 +20,7 @@ class AddSpreeFieldsToCustomUserTable < ActiveRecord::Migration[4.2]
     add_column <%= table_name.inspect %>, :current_sign_in_ip, :string
     add_column <%= table_name.inspect %>, :last_sign_in_ip,    :string
 
-    add_column <%= table_name.inspect %>, :email,  :string
+    add_column <%= table_name.inspect %>, :email,  :string, null: false
     add_column <%= table_name.inspect %>, :tokens, :json
 
     add_index <%= table_name.inspect %>, :email,                unique: true

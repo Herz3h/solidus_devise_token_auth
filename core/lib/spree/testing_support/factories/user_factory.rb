@@ -6,9 +6,8 @@ require 'spree/testing_support/factories/address_factory'
 
 FactoryBot.define do
   factory :user, class: Spree::UserClassHandle.new do
-    email { generate(:email) }
-    password { 'secret' }
-    password_confirmation { password }
+    email    { generate(:email) }
+    password { 'lubieplacki' }
 
     factory :admin_user do
       spree_roles { [Spree::Role.find_by(name: 'admin') || create(:role, name: 'admin')] }

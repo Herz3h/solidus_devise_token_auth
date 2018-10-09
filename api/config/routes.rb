@@ -2,7 +2,7 @@
 
 Spree::Core::Engine.routes.draw do
   namespace :api, defaults: { format: 'json' } do
-    mount_devise_token_auth_for Spree::UserClassHandle.to_s, at: 'auth'
+    mount_devise_token_auth_for Spree.user_class.to_s, at: 'auth'
 
     resources :promotions, only: [:show]
 

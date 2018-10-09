@@ -35,6 +35,10 @@ module Spree
 
       private
 
+      def inflected_spree_user_class
+        "api_#{Spree.user_class.to_s.underscore.gsub('/', '_')}"
+      end
+
       # users should be able to set price when importing orders via api
       def permitted_line_item_attributes
         if can?(:admin, Spree::LineItem)
@@ -45,14 +49,14 @@ module Spree
       end
 
       def load_user
-        @current_api_user ||= current_user
+        @current_api_user ||= public_send("current_#{inflected_spree_user_class}")
       end
 
       def authenticate_user
         unless @current_api_user
-          if requires_authentication? && !user_signed_in? && order_token.blank?
+          if requires_authentication? && !public_send("#{inflected_spree_user_class}_signed_in?") && order_token.blank?
             render "spree/api/errors/must_specify_api_key", status: 401
-          elsif order_token.blank? && (requires_authentication? || !user_signed_in?)
+          elsif order_token.blank? && (requires_authentication? && !public_send("#{inflected_spree_user_class}_signed_in?"))
             render "spree/api/errors/invalid_api_key", status: 401
           end
         end
