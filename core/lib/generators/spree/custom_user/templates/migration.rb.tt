@@ -2,5 +2,29 @@ class AddSpreeFieldsToCustomUserTable < ActiveRecord::Migration[4.2]
   def up
     add_column <%= table_name.inspect %>, :ship_address_id, :integer
     add_column <%= table_name.inspect %>, :bill_address_id, :integer
+
+    add_column <%= table_name.inspect %>, :provider,             :string, null: false, default: 'email'
+    add_column <%= table_name.inspect %>, :uid,                  :string, null: false, default: ''
+
+    add_column <%= table_name.inspect %>, :encrypted_password,   :string, null: false, default: ''
+
+    add_column <%= table_name.inspect %>, :reset_password_token,   :string
+    add_column <%= table_name.inspect %>, :reset_password_sent_at, :datetime
+    add_column <%= table_name.inspect %>, :allow_password_change,  :boolean, default: false
+
+    add_column <%= table_name.inspect %>, :remember_created_at,    :datetime
+
+    add_column <%= table_name.inspect %>, :sign_in_count,      :integer,  null: false, default: 0
+    add_column <%= table_name.inspect %>, :current_sign_in_at, :datetime
+    add_column <%= table_name.inspect %>, :last_sign_in_at,    :datetime
+    add_column <%= table_name.inspect %>, :current_sign_in_ip, :string
+    add_column <%= table_name.inspect %>, :last_sign_in_ip,    :string
+
+    add_column <%= table_name.inspect %>, :email,  :string
+    add_column <%= table_name.inspect %>, :tokens, :json
+
+    add_index <%= table_name.inspect %>, :email,                unique: true
+    add_index <%= table_name.inspect %>, %i(uid provider),      unique: true
+    add_index <%= table_name.inspect %>, :reset_password_token, unique: true
   end
 end

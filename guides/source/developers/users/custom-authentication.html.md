@@ -170,6 +170,17 @@ module MyStore
   ...
 ```
 
+### Add devise_token_auth concern (if desired)
+
+In case you want to use devise_token_auth, make sure to include its basic requirements in your user model
+
+```ruby
+devise :database_authenticatable, :registerable, :recoverable,
+       :rememberable, :trackable, :validatable
+
+include DeviseTokenAuth::Concerns::User
+```
+
 [solidus-user-methods]: https://github.com/solidusio/solidus/blob/master/core/app/models/concerns/spree/user_methods.rb
 
 ### Give your store administrator the admin role

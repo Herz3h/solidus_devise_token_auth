@@ -8,6 +8,12 @@ module Spree
   class LegacyUser < Spree::Base
     include UserMethods
 
+    # devise_token_auth
+    devise :database_authenticatable, :registerable, :recoverable,
+           :rememberable, :trackable, :validatable
+
+    include DeviseTokenAuth::Concerns::User
+
     self.table_name = 'spree_users'
 
     def self.model_name

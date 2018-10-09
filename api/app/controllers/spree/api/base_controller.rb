@@ -13,6 +13,9 @@ module Spree
       include Spree::Core::ControllerHelpers::Pricing
       include Spree::Core::ControllerHelpers::StrongParameters
 
+      # devise_token_auth
+      include DeviseTokenAuth::Concerns::SetUserByToken
+
       class_attribute :admin_line_item_attributes
       self.admin_line_item_attributes = [:price, :variant_id, :sku]
 
@@ -42,14 +45,14 @@ module Spree
       end
 
       def load_user
-        @current_api_user ||= Spree.user_class.find_by(spree_api_key: api_key.to_s)
+        @current_api_user ||= current_user
       end
 
       def authenticate_user
         unless @current_api_user
-          if requires_authentication? && api_key.blank? && order_token.blank?
+          if requires_authentication? && !user_signed_in? && order_token.blank?
             render "spree/api/errors/must_specify_api_key", status: 401
-          elsif order_token.blank? && (requires_authentication? || api_key.present?)
+          elsif order_token.blank? && (requires_authentication? || !user_signed_in?)
             render "spree/api/errors/invalid_api_key", status: 401
           end
         end
