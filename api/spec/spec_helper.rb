@@ -33,6 +33,7 @@ require 'spree/testing_support/authorization_helpers'
 require 'spree/api/testing_support/caching'
 require 'spree/api/testing_support/helpers'
 require 'spree/api/testing_support/setup'
+require 'pry'
 
 ActiveJob::Base.queue_adapter = :test
 

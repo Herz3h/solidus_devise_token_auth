@@ -4,17 +4,14 @@ require "spec_helper"
 
 module Spree
   describe Api::StoresController, type: :request do
+    let(:user)       { create(:user)         }
+    let(:admin_user) { create(:user, :admin) }
+
     let!(:store) do
       create(:store, name: "My Spree Store", url: "spreestore.example.com")
     end
 
-    before do
-      stub_authentication!
-    end
-
     context "as an admin" do
-      sign_in_as_admin!
-
       let!(:non_default_store) do
         create(:store,
           name: "Extra Store",
@@ -23,7 +20,7 @@ module Spree
       end
 
       it "can list the available stores" do
-        get spree.api_stores_path
+        get spree.api_stores_path, headers: admin_user.create_new_auth_token
         expect(json_response["stores"]).to match_array([
           {
             "id" => store.id,
@@ -55,7 +52,7 @@ module Spree
       end
 
       it "can get the store details" do
-        get spree.api_store_path(store)
+        get spree.api_store_path(store), headers: admin_user.create_new_auth_token
         expect(json_response).to eq(
           "id" => store.id,
           "name" => "My Spree Store",
@@ -78,7 +75,7 @@ module Spree
           url: "spree123.example.com",
           mail_from_address: "me@example.com"
         }
-        post spree.api_stores_path, params: { store: store_hash }
+        post spree.api_stores_path, headers: admin_user.create_new_auth_token, params: { store: store_hash }
         expect(response.status).to eq(201)
       end
 
@@ -87,7 +84,7 @@ module Spree
           url: "spree123.example.com",
           mail_from_address: "me@example.com"
         }
-        put spree.api_store_path(store), params: { store: store_hash }
+        put spree.api_store_path(store), headers: admin_user.create_new_auth_token, params: { store: store_hash }
         expect(response.status).to eq(200)
         expect(store.reload.url).to eql "spree123.example.com"
         expect(store.reload.mail_from_address).to eql "me@example.com"
@@ -95,7 +92,7 @@ module Spree
 
       context "deleting a store" do
         it "will fail if it's the default Store" do
-          delete spree.api_store_path(store)
+          delete spree.api_store_path(store), headers: admin_user.create_new_auth_token
           expect(response.status).to eq(422)
           expect(json_response["errors"]["base"]).to eql(
             ["Cannot destroy the default Store."]
@@ -103,7 +100,7 @@ module Spree
         end
 
         it "will destroy the store" do
-          delete spree.api_store_path(non_default_store)
+          delete spree.api_store_path(non_default_store), headers: admin_user.create_new_auth_token
           expect(response.status).to eq(204)
         end
       end
@@ -111,22 +108,22 @@ module Spree
 
     context "as an user" do
       it "cannot list all the stores" do
-        get spree.api_stores_path
+        get spree.api_stores_path, headers: user.create_new_auth_token
         expect(response.status).to eq(401)
       end
 
       it "cannot get the store details" do
-        get spree.api_store_path(store)
+        get spree.api_store_path(store), headers: user.create_new_auth_token
         expect(response.status).to eq(401)
       end
 
       it "cannot create a new store" do
-        post spree.api_stores_path, params: { store: {} }
+        post spree.api_stores_path, headers: user.create_new_auth_token, params: { store: {} }
         expect(response.status).to eq(401)
       end
 
       it "cannot update an existing store" do
-        put spree.api_store_path(store), params: { store: {} }
+        put spree.api_store_path(store), headers: user.create_new_auth_token, params: { store: {} }
         expect(response.status).to eq(401)
       end
     end

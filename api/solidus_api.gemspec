@@ -30,4 +30,6 @@ Gem::Specification.new do |gem|
   # at the time of writing it,
   # feel free to update
   gem.add_dependency 'devise_token_auth', '~> 1.0.0rc2'
+
+  gem.add_development_dependency 'pry'
 end

@@ -5,38 +5,37 @@ require 'spec_helper'
 describe Spree::Api::ShipmentsController, type: :request do
   include ActiveSupport::Testing::TimeHelpers
 
+  let(:user)       { create(:user)         }
+  let(:admin_user) { create(:user, :admin) }
+
   let!(:shipment) { create(:shipment, inventory_units: [build(:inventory_unit, shipment: nil)]) }
   let!(:attributes) { [:id, :tracking, :tracking_url, :number, :cost, :shipped_at, :stock_location_name, :order_id, :shipping_rates, :shipping_methods] }
-
-  before do
-    stub_authentication!
-  end
 
   let!(:resource_scoping) { { id: shipment.to_param, shipment: { order_id: shipment.order.to_param } } }
 
   context "as a non-admin" do
     it "cannot make a shipment ready" do
-      put spree.ready_api_shipment_path(shipment)
+      put spree.ready_api_shipment_path(shipment), headers: user.create_new_auth_token
       assert_unauthorized!
     end
 
     it "cannot make a shipment shipped" do
-      put spree.ship_api_shipment_path(shipment)
+      put spree.ship_api_shipment_path(shipment), headers: user.create_new_auth_token
       assert_unauthorized!
     end
 
     it "cannot remove order contents from shipment" do
-      put spree.remove_api_shipment_path(shipment)
+      put spree.remove_api_shipment_path(shipment), headers: user.create_new_auth_token
       assert_unauthorized!
     end
 
     it "cannot add contents to the shipment" do
-      put spree.add_api_shipment_path(shipment)
+      put spree.add_api_shipment_path(shipment), headers: user.create_new_auth_token
       assert_unauthorized!
     end
 
     it "cannot update the shipment" do
-      put spree.api_shipment_path(shipment)
+      put spree.api_shipment_path(shipment), headers: user.create_new_auth_token
       assert_unauthorized!
     end
   end
@@ -45,8 +44,6 @@ describe Spree::Api::ShipmentsController, type: :request do
     let!(:order) { shipment.order }
     let!(:stock_location) { create(:stock_location_with_items) }
     let!(:variant) { create(:variant) }
-
-    sign_in_as_admin!
 
     # Start writing this spec a bit differently than before....
     describe 'POST #create' do
@@ -59,7 +56,7 @@ describe Spree::Api::ShipmentsController, type: :request do
       end
 
       subject do
-        post spree.api_shipments_path, params: params
+        post spree.api_shipments_path, headers: admin_user.create_new_auth_token, params: params
       end
 
       [:variant_id, :stock_location_id].each do |field|
@@ -90,14 +87,14 @@ describe Spree::Api::ShipmentsController, type: :request do
         }
       }
 
-      put spree.api_shipment_path(shipment), params: params
+      put spree.api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: params
       expect(response.status).to eq(200)
       expect(json_response['stock_location_name']).to eq(stock_location.name)
     end
 
     it "can make a shipment ready" do
       allow_any_instance_of(Spree::Order).to receive_messages(paid?: true, complete?: true)
-      put spree.ready_api_shipment_path(shipment)
+      put spree.ready_api_shipment_path(shipment), headers: admin_user.create_new_auth_token
       expect(json_response).to have_attributes(attributes)
       expect(json_response["state"]).to eq("ready")
       expect(shipment.reload.state).to eq("ready")
@@ -105,7 +102,7 @@ describe Spree::Api::ShipmentsController, type: :request do
 
     it "cannot make a shipment ready if the order is unpaid" do
       allow_any_instance_of(Spree::Order).to receive_messages(paid?: false)
-      put spree.ready_api_shipment_path(shipment)
+      put spree.ready_api_shipment_path(shipment), headers: admin_user.create_new_auth_token
       expect(json_response["error"]).to eq("Cannot ready shipment.")
       expect(response.status).to eq(422)
     end
@@ -115,7 +112,7 @@ describe Spree::Api::ShipmentsController, type: :request do
       let(:shipment) { order.shipments.first }
 
       it 'adds a variant to a shipment' do
-        put spree.add_api_shipment_path(shipment), params: { variant_id: variant.to_param, quantity: 2 }
+        put spree.add_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { variant_id: variant.to_param, quantity: 2 }
         expect(response.status).to eq(200)
         expect(json_response['manifest'].detect { |h| h['variant']['id'] == variant.id }["quantity"]).to eq(2)
       end
@@ -123,7 +120,7 @@ describe Spree::Api::ShipmentsController, type: :request do
       it 'removes a variant from a shipment' do
         order.contents.add(variant, 2)
 
-        put spree.remove_api_shipment_path(shipment), params: { variant_id: variant.to_param, quantity: 1 }
+        put spree.remove_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { variant_id: variant.to_param, quantity: 1 }
         expect(response.status).to eq(200)
         expect(json_response['manifest'].detect { |h| h['variant']['id'] == variant.id }["quantity"]).to eq(1)
       end
@@ -132,24 +129,24 @@ describe Spree::Api::ShipmentsController, type: :request do
         order.contents.add(variant, 2)
         variant.discard
 
-        put spree.remove_api_shipment_path(shipment), params: { variant_id: variant.to_param, quantity: 1 }
+        put spree.remove_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { variant_id: variant.to_param, quantity: 1 }
         expect(response.status).to eq(200)
         expect(json_response['manifest'].detect { |h| h['variant']['id'] == variant.id }["quantity"]).to eq(1)
       end
     end
 
     context 'for ready shipments' do
-      let(:order) { create :order_ready_to_ship, line_items_attributes: [{ variant: variant, quantity: 1 }] }
+      let(:order) { create :order_ready_to_ship, user: user, line_items_attributes: [{ variant: variant, quantity: 1 }] }
       let(:shipment) { order.shipments.first }
 
       it 'adds a variant to a shipment' do
-        put spree.add_api_shipment_path(shipment), params: { variant_id: variant.to_param, quantity: 1 }
+        put spree.add_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { variant_id: variant.to_param, quantity: 1 }
         expect(response.status).to eq(200)
         expect(json_response['manifest'].detect { |h| h['variant']['id'] == variant.id }['quantity']).to eq(2)
       end
 
       it 'removes a variant from a shipment' do
-        put spree.remove_api_shipment_path(shipment), params: { variant_id: variant.to_param, quantity: 1 }
+        put spree.remove_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { variant_id: variant.to_param, quantity: 1 }
         expect(response.status).to eq(200)
         expect(json_response['manifest'].detect { |h| h['variant']['id'] == variant.id }).to be nil
       end
@@ -160,13 +157,13 @@ describe Spree::Api::ShipmentsController, type: :request do
       let(:shipment) { order.shipments.first }
 
       it 'adds a variant to a shipment' do
-        put spree.add_api_shipment_path(shipment), params: { variant_id: variant.to_param, quantity: 2 }
+        put spree.add_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { variant_id: variant.to_param, quantity: 2 }
         expect(response.status).to eq(200)
         expect(json_response['manifest'].detect { |h| h['variant']['id'] == variant.id }["quantity"]).to eq(2)
       end
 
       it 'cannot remove a variant from a shipment' do
-        put spree.remove_api_shipment_path(shipment), params: { variant_id: variant.to_param, quantity: 1 }
+        put spree.remove_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { variant_id: variant.to_param, quantity: 1 }
         expect(response.status).to eq(422)
         expect(json_response['errors']['base'].join).to match /Cannot remove items/
       end
@@ -174,14 +171,13 @@ describe Spree::Api::ShipmentsController, type: :request do
 
     describe '#mine' do
       subject do
-        get spree.mine_api_shipments_path, params: params
+        get spree.mine_api_shipments_path, headers: shipped_order.user.create_new_auth_token, params: params
       end
 
       let(:params) { {} }
 
       context "the current api user is authenticated and has orders" do
-        let(:current_api_user) { shipped_order.user }
-        let!(:shipped_order) { create(:shipped_order) }
+        let!(:shipped_order) { create(:shipped_order, user: user) }
 
         it 'succeeds' do
           subject
@@ -193,7 +189,7 @@ describe Spree::Api::ShipmentsController, type: :request do
 
           it 'contains the shipments' do
             subject
-            expect(rendered_shipment_ids).to match_array current_api_user.orders.flat_map(&:shipments).map(&:id)
+            expect(rendered_shipment_ids).to match_array user.orders.flat_map(&:shipments).map(&:id)
           end
 
           context "credit card payment" do
@@ -205,7 +201,6 @@ describe Spree::Api::ShipmentsController, type: :request do
           end
 
           context "store credit payment" do
-            let(:current_api_user) { shipped_order.user }
             let(:shipped_order)    { create(:shipped_order, payment_type: :store_credit_payment) }
 
             before { subject }
@@ -216,7 +211,6 @@ describe Spree::Api::ShipmentsController, type: :request do
           end
 
           context "check payment" do
-            let(:current_api_user) { shipped_order.user }
             let(:shipped_order)    { create(:shipped_order, payment_type: :check_payment) }
 
             before { subject }
@@ -230,17 +224,17 @@ describe Spree::Api::ShipmentsController, type: :request do
         context 'with filtering' do
           let(:params) { { q: { order_completed_at_not_null: 1 } } }
 
-          let!(:incomplete_order) { create(:order_with_line_items, user: current_api_user) }
+          let!(:incomplete_order) { create(:order_with_line_items, user: user) }
 
           it 'filters' do
             subject
-            expect(assigns(:shipments).map(&:id)).to match_array current_api_user.orders.complete.flat_map(&:shipments).map(&:id)
+            expect(assigns(:shipments).map(&:id)).to match_array user.orders.complete.flat_map(&:shipments).map(&:id)
           end
         end
       end
 
       context "the current api user does not exist" do
-        let(:current_api_user) { nil }
+        let(:shipped_order) { OpenStruct.new(user: OpenStruct.new({ create_new_auth_token: {} })) }
 
         it "returns a 401" do
           subject
@@ -254,10 +248,8 @@ describe Spree::Api::ShipmentsController, type: :request do
     let!(:user_shipping_method) { shipment.shipping_method }
     let!(:admin_shipping_method) { create(:shipping_method, available_to_users: false, name: "Secret") }
 
-    sign_in_as_admin!
-
     subject do
-      get spree.estimated_rates_api_shipment_path(shipment)
+      get spree.estimated_rates_api_shipment_path(shipment), headers: admin_user.create_new_auth_token
     end
 
     it "returns success" do
@@ -293,16 +285,15 @@ describe Spree::Api::ShipmentsController, type: :request do
   end
 
   describe "#ship" do
-    let(:shipment) { create(:order_ready_to_ship).shipments.first }
+    let(:shipment) { create(:order_ready_to_ship, user: user).shipments.first }
 
     let(:send_mailer) { nil }
 
     subject do
-      put spree.ship_api_shipment_path(shipment), params: { send_mailer: send_mailer }
+      put spree.ship_api_shipment_path(shipment), headers: admin_user.create_new_auth_token, params: { send_mailer: send_mailer }
     end
 
     context "the user is allowed to ship the shipment" do
-      sign_in_as_admin!
       it "ships the shipment" do
         now = Time.current
         travel_to(now) do
@@ -341,10 +332,8 @@ describe Spree::Api::ShipmentsController, type: :request do
     end
 
     context "the user is not allowed to ship the shipment" do
-      sign_in_as_admin!
-
       before do
-        ability = Spree::Ability.new(current_api_user)
+        ability = Spree::Ability.new(user)
         ability.cannot :ship, Spree::Shipment
         allow_any_instance_of(Spree::Api::ShipmentsController).to receive(:current_ability) { ability }
       end
@@ -362,26 +351,10 @@ describe Spree::Api::ShipmentsController, type: :request do
         expect(response.status).to eq 401
       end
     end
-
-    context "the user is not allowed to view the shipment" do
-      it "does nothing" do
-        expect {
-          expect {
-            subject
-          }.not_to change(shipment, :state)
-        }.not_to change(shipment, :shipped_at)
-      end
-
-      it "responds with a 401" do
-        subject
-        expect(response).to be_unauthorized
-      end
-    end
   end
 
   describe "transfers" do
-    let(:user) { create(:admin_user, spree_api_key: 'abc123') }
-    let(:current_api_user) { user }
+    let(:user) { create(:user, :admin) }
     let(:stock_item) { create(:stock_item, backorderable: false) }
     let(:variant) { stock_item.variant }
 
@@ -407,12 +380,12 @@ describe Spree::Api::ShipmentsController, type: :request do
 
       subject do
         post "/api/shipments/transfer_to_location.json",
+          headers: user.create_new_auth_token,
           params: {
             original_shipment_number: source_shipment.number,
             stock_location_id: stock_location_id,
             quantity: 1,
             variant_id: variant.id,
-            token: user.spree_api_key
           }
       end
 
@@ -496,12 +469,12 @@ describe Spree::Api::ShipmentsController, type: :request do
 
       subject do
         post "/api/shipments/transfer_to_shipment.json",
+          headers: user.create_new_auth_token,
           params: {
             original_shipment_number: source_shipment_number,
             target_shipment_number: target_shipment.number,
             quantity: 1,
             variant_id: variant.id,
-            token: user.spree_api_key
           }
       end
 

@@ -4,13 +4,15 @@ require 'spec_helper'
 
 module Spree
   describe Api::TaxonsController, type: :request do
-    let(:taxonomy) { create(:taxonomy) }
-    let(:taxon) { create(:taxon, name: "Ruby", taxonomy: taxonomy) }
-    let(:taxon2) { create(:taxon, name: "Rails", taxonomy: taxonomy) }
+    let(:user)       { create(:user)         }
+    let(:admin_user) { create(:user, :admin) }
+
+    let(:taxonomy)   { create(:taxonomy) }
+    let(:taxon)      { create(:taxon, name: "Ruby", taxonomy: taxonomy) }
+    let(:taxon2)     { create(:taxon, name: "Rails", taxonomy: taxonomy) }
     let(:attributes) { ["id", "name", "pretty_name", "permalink", "parent_id", "taxonomy_id"] }
 
     before do
-      stub_authentication!
       taxon2.children << create(:taxon, name: "3.2.2", taxonomy: taxonomy)
       taxon.children << taxon2
       taxonomy.root.children << taxon
@@ -18,7 +20,7 @@ module Spree
 
     context "as a normal user" do
       it "gets all taxons for a taxonomy" do
-        get spree.api_taxonomy_taxons_path(taxonomy)
+        get spree.api_taxonomy_taxons_path(taxonomy), headers: user.create_new_auth_token
 
         expect(json_response['taxons'].first['name']).to eq taxon.name
         children = json_response['taxons'].first['taxons']
@@ -29,7 +31,7 @@ module Spree
 
       # Regression test for https://github.com/spree/spree/issues/4112
       it "does not include children when asked not to" do
-        get spree.api_taxonomy_taxons_path(taxonomy), params: { without_children: 1 }
+        get spree.api_taxonomy_taxons_path(taxonomy), headers: user.create_new_auth_token, params: { without_children: 1 }
 
         expect(json_response['taxons'].first['name']).to eq(taxon.name)
         expect(json_response['taxons'].first['taxons']).to be_nil
@@ -39,7 +41,7 @@ module Spree
         new_taxon = create(:taxon, name: "Go", taxonomy: taxonomy)
         taxonomy.root.children << new_taxon
         expect(taxonomy.root.children.count).to eql(2)
-        get spree.api_taxonomy_taxons_path(taxonomy), params: { page: 1, per_page: 1 }
+        get spree.api_taxonomy_taxons_path(taxonomy), headers: user.create_new_auth_token, params: { page: 1, per_page: 1 }
         expect(json_response["count"]).to eql(1)
         expect(json_response["total_count"]).to eql(2)
         expect(json_response["current_page"]).to eql(1)
@@ -50,7 +52,7 @@ module Spree
       describe 'searching' do
         context 'with a name' do
           before do
-            get spree.api_taxons_path, params: { q: { name_cont: name } }
+            get spree.api_taxons_path, headers: user.create_new_auth_token, params: { q: { name_cont: name } }
           end
 
           context 'with one result' do
@@ -74,7 +76,7 @@ module Spree
 
         context 'with no filters' do
           it "gets all taxons" do
-            get spree.api_taxons_path
+            get spree.api_taxons_path, headers: user.create_new_auth_token
 
             expect(json_response['taxons'].first['name']).to eq taxonomy.root.name
             children = json_response['taxons'].first['taxons']
@@ -86,7 +88,7 @@ module Spree
       end
 
       it "gets a single taxon" do
-        get spree.api_taxonomy_taxon_path(taxonomy, taxon.id)
+        get spree.api_taxonomy_taxon_path(taxonomy, taxon.id), headers: user.create_new_auth_token
 
         expect(json_response['name']).to eq taxon.name
         expect(json_response['taxons'].count).to eq 1
@@ -94,7 +96,7 @@ module Spree
 
       it "gets all taxons in JSTree form" do
         expect(Spree::Deprecation).to(receive(:warn))
-        get spree.jstree_api_taxonomy_taxon_path(taxonomy, taxon.id)
+        get spree.jstree_api_taxonomy_taxon_path(taxonomy, taxon.id), headers: user.create_new_auth_token
         response = json_response.first
         expect(response["data"]).to eq(taxon2.name)
         expect(response["attr"]).to eq({ "name" => taxon2.name, "id" => taxon2.id })
@@ -102,24 +104,24 @@ module Spree
       end
 
       it "can learn how to create a new taxon" do
-        get spree.new_api_taxonomy_taxon_path(taxonomy)
+        get spree.new_api_taxonomy_taxon_path(taxonomy), headers: user.create_new_auth_token
         expect(json_response["attributes"]).to eq(attributes.map(&:to_s))
         required_attributes = json_response["required_attributes"]
         expect(required_attributes).to include("name")
       end
 
       it "cannot create a new taxon if not an admin" do
-        post spree.api_taxonomy_taxons_path(taxonomy), params: { taxon: { name: "Location" } }
+        post spree.api_taxonomy_taxons_path(taxonomy), headers: user.create_new_auth_token, params: { taxon: { name: "Location" } }
         assert_unauthorized!
       end
 
       it "cannot update a taxon" do
-        put spree.api_taxonomy_taxon_path(taxonomy, taxon.id), params: { taxon: { name: "I hacked your store!" } }
+        put spree.api_taxonomy_taxon_path(taxonomy, taxon.id), headers: user.create_new_auth_token, params: { taxon: { name: "I hacked your store!" } }
         assert_unauthorized!
       end
 
       it "cannot delete a taxon" do
-        delete spree.api_taxonomy_taxon_path(taxonomy, taxon.id)
+        delete spree.api_taxonomy_taxon_path(taxonomy, taxon.id), headers: user.create_new_auth_token
         assert_unauthorized!
       end
 
@@ -131,11 +133,11 @@ module Spree
         end
 
         it "handles exclude_data correctly" do
-          get spree.api_taxon_products_path, params: { id: taxon.id, simple: true }
+          get spree.api_taxon_products_path, headers: user.create_new_auth_token, params: { id: taxon.id, simple: true }
           expect(response).to be_successful
           simple_response = json_response
 
-          get spree.api_taxon_products_path, params: { id: taxon.id }
+          get spree.api_taxon_products_path, headers: user.create_new_auth_token, params: { id: taxon.id }
           expect(response).to be_successful
           full_response = json_response
 
@@ -150,10 +152,8 @@ module Spree
     end
 
     context "as an admin" do
-      sign_in_as_admin!
-
       it "can create" do
-        post spree.api_taxonomy_taxons_path(taxonomy), params: { taxon: { name: "Colors" } }
+        post spree.api_taxonomy_taxons_path(taxonomy), headers: admin_user.create_new_auth_token, params: { taxon: { name: "Colors" } }
         expect(json_response).to have_attributes(attributes)
         expect(response.status).to eq(201)
 
@@ -166,14 +166,14 @@ module Spree
 
       it "can update the position in the list" do
         taxonomy.root.children << taxon2
-        put spree.api_taxonomy_taxon_path(taxonomy, taxon.id), params: { taxon: { parent_id: taxon.parent_id, child_index: 2 } }
+        put spree.api_taxonomy_taxon_path(taxonomy, taxon.id), headers: admin_user.create_new_auth_token, params: { taxon: { parent_id: taxon.parent_id, child_index: 2 } }
         expect(response.status).to eq(200)
         expect(taxonomy.reload.root.children[0]).to eql taxon2
         expect(taxonomy.reload.root.children[1]).to eql taxon
       end
 
       it "cannot create a new taxon with invalid attributes" do
-        post spree.api_taxonomy_taxons_path(taxonomy), params: { taxon: { foo: :bar } }
+        post spree.api_taxonomy_taxons_path(taxonomy), headers: admin_user.create_new_auth_token, params: { taxon: { foo: :bar } }
         expect(response.status).to eq(422)
         expect(json_response["error"]).to eq("Invalid resource. Please fix errors and try again.")
 
@@ -181,7 +181,7 @@ module Spree
       end
 
       it "cannot create a new taxon with invalid taxonomy_id" do
-        post spree.api_taxonomy_taxons_path(1000), params: { taxon: { name: "Colors" } }
+        post spree.api_taxonomy_taxons_path(1000), headers: admin_user.create_new_auth_token, params: { taxon: { name: "Colors" } }
         expect(response.status).to eq(422)
         expect(json_response["error"]).to eq("Invalid resource. Please fix errors and try again.")
 
@@ -193,7 +193,7 @@ module Spree
       end
 
       it "can destroy" do
-        delete spree.api_taxonomy_taxon_path(taxonomy, taxon.id)
+        delete spree.api_taxonomy_taxon_path(taxonomy, taxon.id), headers: admin_user.create_new_auth_token
         expect(response.status).to eq(204)
       end
     end

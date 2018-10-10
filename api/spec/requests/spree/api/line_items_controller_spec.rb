@@ -12,18 +12,17 @@ module Spree
   end
 
   describe Api::LineItemsController, type: :request do
-    let!(:order) { create(:order_with_line_items, line_items_count: 1) }
+    let(:user)       { create(:user) }
+    let(:other_user) { create(:user) }
+
+    let!(:order)     { create(:order_with_line_items, line_items_count: 1, user: user) }
 
     let(:product) { create(:product) }
     let(:attributes) { [:id, :quantity, :price, :variant, :total, :display_amount, :single_display_amount] }
     let(:resource_scoping) { { order_id: order.to_param } }
 
-    before do
-      stub_authentication!
-    end
-
     it "can learn how to create a new line item" do
-      get spree.new_api_order_line_item_path(order)
+      get spree.new_api_order_line_item_path(order), headers: user.create_new_auth_token
       expect(json_response["attributes"]).to eq(["quantity", "price", "variant_id"])
       required_attributes = json_response["required_attributes"]
       expect(required_attributes).to include("quantity", "variant_id")
@@ -31,7 +30,9 @@ module Spree
 
     context "authenticating with a token" do
       it "can add a new line item to an existing order" do
-        post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param, quantity: 1 }, order_token: order.guest_token }
+        post spree.api_order_line_items_path(order),
+          params: { line_item: { variant_id: product.master.to_param, quantity: 1 }, order_token: order.guest_token }
+
         expect(response.status).to eq(201)
         expect(json_response).to have_attributes(attributes)
         expect(json_response["variant"]["name"]).not_to be_blank
@@ -48,33 +49,39 @@ module Spree
     end
 
     context "as the order owner" do
-      before do
-        allow_any_instance_of(Order).to receive_messages user: current_api_user
-      end
-
       context "dealing with a completed order" do
         let!(:order) { create(:completed_order_with_totals) }
 
         it "can't add a new line item" do
-          post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+          post spree.api_order_line_items_path(order),
+            headers: user.create_new_auth_token,
+            params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+
           assert_unauthorized!
         end
 
         it "can't update a line item" do
           line_item = order.line_items.first
-          put spree.api_order_line_item_path(order, line_item), params: { line_item: { quantity: 10 } }
+
+          put spree.api_order_line_item_path(order, line_item),
+            headers: user.create_new_auth_token,
+            params: { line_item: { quantity: 10 } }
+
           assert_unauthorized!
         end
 
         it "can't delete a line item" do
           line_item = order.line_items.first
-          delete spree.api_order_line_item_path(order, line_item)
+          delete spree.api_order_line_item_path(order, line_item), headers: user.create_new_auth_token
           assert_unauthorized!
         end
       end
 
       it "can add a new line item to an existing order" do
-        post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+        post spree.api_order_line_items_path(order),
+          headers: user.create_new_auth_token,
+          params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+
         expect(response.status).to eq(201)
         expect(json_response).to have_attributes(attributes)
         expect(json_response["variant"]["name"]).not_to be_blank
@@ -83,18 +90,23 @@ module Spree
       it "can add a new line item to an existing order with options" do
         expect_any_instance_of(LineItem).to receive(:some_option=).with("foobar")
         post spree.api_order_line_items_path(order),
-                 params: {
-                                    line_item: {
-                              variant_id: product.master.to_param,
-                              quantity: 1,
-                              options: { some_option: "foobar" }
-                            }
-        }
+          headers: user.create_new_auth_token,
+          params: {
+                    line_item: {
+                       variant_id: product.master.to_param,
+                       quantity:   1,
+                       options:    { some_option: "foobar" },
+                  },
+          }
+
         expect(response.status).to eq(201)
       end
 
       it "default quantity to 1 if none is given" do
-        post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param } }
+        post spree.api_order_line_items_path(order),
+          headers: user.create_new_auth_token,
+          params: { line_item: { variant_id: product.master.to_param } }
+
         expect(response.status).to eq(201)
         expect(json_response).to have_attributes(attributes)
         expect(json_response[:quantity]).to eq 1
@@ -102,7 +114,11 @@ module Spree
 
       it "increases a line item's quantity if it exists already" do
         order.line_items.create(variant_id: product.master.id, quantity: 10)
-        post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+
+        post spree.api_order_line_items_path(order),
+          headers: user.create_new_auth_token,
+          params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+
         expect(response.status).to eq(201)
         order.reload
         expect(order.line_items.count).to eq(2) # 1 original due to factory, + 1 in this test
@@ -112,7 +128,11 @@ module Spree
 
       it "can update a line item on the order" do
         line_item = order.line_items.first
-        put spree.api_order_line_item_path(order, line_item), params: { line_item: { quantity: 101 } }
+
+        put spree.api_order_line_item_path(order, line_item),
+          headers: user.create_new_auth_token,
+          params: { line_item: { quantity: 101 } }
+
         expect(response.status).to eq(200)
         order.reload
         expect(order.total).to eq(1010) # 10 original due to factory, + 1000 in this test
@@ -124,15 +144,17 @@ module Spree
         expect_any_instance_of(LineItem).to receive(:some_option=).with("foobar")
         line_item = order.line_items.first
         put spree.api_order_line_item_path(order, line_item),
-                params: {
-                  line_item: { quantity: 1, options: { some_option: "foobar" } }
-                }
+          headers: user.create_new_auth_token,
+          params: {
+            line_item: { quantity: 1, options: { some_option: "foobar" } },
+          }
+
         expect(response.status).to eq(200)
       end
 
       it "can delete a line item on the order" do
         line_item = order.line_items.first
-        delete spree.api_order_line_item_path(order, line_item)
+        delete spree.api_order_line_item_path(order, line_item), headers: user.create_new_auth_token
         expect(response.status).to eq(204)
         order.reload
         expect(order.line_items.count).to eq(0) # 1 original due to factory, - 1 in this test
@@ -141,26 +163,27 @@ module Spree
 
       context "order contents changed after shipments were created" do
         let!(:store) { create(:store) }
-        let!(:order) { Order.create(store: store) }
+        let!(:order) { create(:order, store: store, user: user) }
+
         let!(:line_item) { order.contents.add(product.master) }
 
         before { order.create_proposed_shipments }
 
         it "clear out shipments on create" do
           expect(order.reload.shipments).not_to be_empty
-          post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+          post spree.api_order_line_items_path(order), headers: user.create_new_auth_token, params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
           expect(order.reload.shipments).to be_empty
         end
 
         it "clear out shipments on update" do
           expect(order.reload.shipments).not_to be_empty
-          put spree.api_order_line_item_path(order, line_item), params: { line_item: { quantity: 1000 } }
+          put spree.api_order_line_item_path(order, line_item), headers: user.create_new_auth_token, params: { line_item: { quantity: 1000 } }
           expect(order.reload.shipments).to be_empty
         end
 
         it "clear out shipments on delete" do
           expect(order.reload.shipments).not_to be_empty
-          delete spree.api_order_line_item_path(order, line_item)
+          delete spree.api_order_line_item_path(order, line_item), headers: user.create_new_auth_token
           expect(order.reload.shipments).to be_empty
         end
 
@@ -172,7 +195,7 @@ module Spree
 
           it "doesn't destroy shipments or restart checkout flow" do
             expect(order.reload.shipments).not_to be_empty
-            post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+            post spree.api_order_line_items_path(order), headers: user.create_new_auth_token, params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
             expect(order.reload.shipments).not_to be_empty
           end
         end
@@ -180,27 +203,28 @@ module Spree
     end
 
     context "as just another user" do
-      before do
-        user = create(:user)
-        allow(Spree.user_class).to receive(:find_by).
-                                     and_return(user)
-      end
-
       it "cannot add a new line item to the order" do
-        post spree.api_order_line_items_path(order), params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+        post spree.api_order_line_items_path(order),
+          headers: other_user.create_new_auth_token,
+          params: { line_item: { variant_id: product.master.to_param, quantity: 1 } }
+
         assert_unauthorized!
       end
 
       it "cannot update a line item on the order" do
         line_item = order.line_items.first
-        put spree.api_order_line_item_path(order, line_item), params: { line_item: { quantity: 1000 } }
+
+        put spree.api_order_line_item_path(order, line_item),
+          headers: other_user.create_new_auth_token,
+          params: { line_item: { quantity: 1000 } }
+
         assert_unauthorized!
         expect(line_item.reload.quantity).not_to eq(1000)
       end
 
       it "cannot delete a line item on the order" do
         line_item = order.line_items.first
-        delete spree.api_order_line_item_path(order, line_item)
+        delete spree.api_order_line_item_path(order, line_item), headers: other_user.create_new_auth_token
         assert_unauthorized!
         expect { line_item.reload }.not_to raise_error
       end

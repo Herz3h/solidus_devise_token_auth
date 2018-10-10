@@ -101,7 +101,10 @@ module Spree
 
       def invalid_resource!(resource)
         Rails.logger.error "invalid_resouce_errors=#{resource.errors.full_messages}"
-        @resource = resource
+
+        # not calling this "@resource"
+        # to avoid conflicts with devise_token_auth @resource
+        @spree_resource = resource
         render "spree/api/errors/invalid_resource", status: 422
       end
 

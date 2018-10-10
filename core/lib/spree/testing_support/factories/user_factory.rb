@@ -9,11 +9,11 @@ FactoryBot.define do
     email    { generate(:email) }
     password { 'lubieplacki' }
 
-    factory :admin_user do
+    trait :admin do
       spree_roles { [Spree::Role.find_by(name: 'admin') || create(:role, name: 'admin')] }
     end
 
-    factory :user_with_addresses do |_u|
+    trait :with_addresses do |_u|
       bill_address
       ship_address
     end

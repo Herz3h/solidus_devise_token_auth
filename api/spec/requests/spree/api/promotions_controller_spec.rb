@@ -20,19 +20,17 @@ module Spree
       end
     end
 
-    before do
-      stub_authentication!
-    end
-
-    let(:promotion) { create :promotion, code: '10off' }
+    let(:user)       { create(:user)         }
+    let(:admin_user) { create(:user, :admin) }
+    let(:promotion)  { create(:promotion, code: '10off') }
 
     describe 'GET #show' do
-      subject { get spree.api_promotion_path(id) }
+      subject { get spree.api_promotion_path(id), headers: headers }
 
       context 'when admin' do
-        sign_in_as_admin!
+        let(:headers) { admin_user.create_new_auth_token }
 
-        context 'when finding by id' do
+j       context 'when finding by id' do
           let(:id) { promotion.id }
 
           it_behaves_like "a JSON response"
@@ -55,7 +53,8 @@ module Spree
       end
 
       context 'when non admin' do
-        let(:id) { promotion.id }
+        let(:id)      { promotion.id }
+        let(:headers) { user.create_new_auth_token }
 
         it 'should be unauthorized' do
           subject

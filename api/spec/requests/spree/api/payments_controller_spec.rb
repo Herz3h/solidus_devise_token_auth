@@ -4,6 +4,9 @@ require 'spec_helper'
 
 module Spree
   describe Spree::Api::PaymentsController, type: :request do
+    let(:user)       { create(:user)         }
+    let(:admin_user) { create(:user, :admin) }
+
     let!(:order) { create(:order) }
     let!(:payment) { create(:payment, order: order) }
     let!(:attributes) {
@@ -12,23 +15,19 @@ module Spree
        :created_at, :updated_at]
     }
 
-    before do
-      stub_authentication!
-    end
-
     context "as a user" do
       context "when the order belongs to the user" do
         before do
-          allow_any_instance_of(Order).to receive_messages user: current_api_user
+          allow_any_instance_of(Order).to receive_messages user: user
         end
 
         it "can view the payments for their order" do
-          get spree.api_order_payments_path(order)
+          get spree.api_order_payments_path(order), headers: user.create_new_auth_token
           expect(json_response["payments"].first).to have_attributes(attributes)
         end
 
         it "can learn how to create a new payment" do
-          get spree.new_api_order_payment_path(order)
+          get spree.new_api_order_payment_path(order), headers: user.create_new_auth_token
           expect(json_response["attributes"]).to eq(attributes.map(&:to_s))
           expect(json_response["payment_methods"]).not_to be_empty
           expect(json_response["payment_methods"].first).to have_attributes([:id, :name, :description])
@@ -40,7 +39,10 @@ module Spree
           end
 
           it "can create a new payment" do
-            post spree.api_order_payments_path(order), params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50 } }
+            post spree.api_order_payments_path(order),
+              headers: user.create_new_auth_token,
+              params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50 } }
+
             expect(response.status).to eq(201)
             expect(json_response).to have_attributes(attributes)
           end
@@ -50,7 +52,9 @@ module Spree
               PaymentMethod.first.update!(available_to_users: false)
 
               expect {
-                post spree.api_order_payments_path(order), params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50 } }
+                post spree.api_order_payments_path(order),
+                  headers: user.create_new_auth_token,
+                  params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50 } }
               }.not_to change { Spree::Payment.count }
               expect(response.status).to eq(404)
             end
@@ -60,7 +64,10 @@ module Spree
         context "payment source is required" do
           context "no source is provided" do
             it "returns errors" do
-              post spree.api_order_payments_path(order), params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50 } }
+              post spree.api_order_payments_path(order),
+                headers: user.create_new_auth_token,
+                params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50 } }
+
               expect(response.status).to eq(422)
               expect(json_response['error']).to eq("Invalid resource. Please fix errors and try again.")
               expect(json_response['errors']['source']).to eq(["can't be blank"])
@@ -69,7 +76,10 @@ module Spree
 
           context "source is provided" do
             it "can create a new payment" do
-              post spree.api_order_payments_path(order), params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50, source_attributes: { gateway_payment_profile_id: 1 } } }
+              post spree.api_order_payments_path(order),
+                headers: user.create_new_auth_token,
+                params: { payment: { payment_method_id: PaymentMethod.first.id, amount: 50, source_attributes: { gateway_payment_profile_id: 1 } } }
+
               expect(response.status).to eq(201)
               expect(json_response).to have_attributes(attributes)
             end
@@ -77,17 +87,20 @@ module Spree
         end
 
         it "can view a pre-existing payment's details" do
-          get spree.api_order_payment_path(order, payment)
+          get spree.api_order_payment_path(order, payment), headers: user.create_new_auth_token
           expect(json_response).to have_attributes(attributes)
         end
 
         it "cannot update a payment" do
-          put spree.api_order_payment_path(order, payment), params: { payment: { amount: 2.01 } }
+          put spree.api_order_payment_path(order, payment),
+            headers: user.create_new_auth_token,
+            params: { payment: { amount: 2.01 } }
+
           assert_unauthorized!
         end
 
         it "cannot authorize a payment" do
-          put spree.authorize_api_order_payment_path(order, payment)
+          put spree.authorize_api_order_payment_path(order, payment), headers: user.create_new_auth_token
           assert_unauthorized!
         end
       end
@@ -98,22 +111,23 @@ module Spree
         end
 
         it "cannot view payments for somebody else's order" do
-          get spree.api_order_payments_path(order)
+          get spree.api_order_payments_path(order), headers: user.create_new_auth_token
           assert_unauthorized!
         end
 
         it "can view the payments for an order given the order token" do
-          get spree.api_order_payments_path(order), params: { order_token: order.guest_token }
+          get spree.api_order_payments_path(order),
+            headers: user.create_new_auth_token,
+            params: { order_token: order.guest_token }
+
           expect(json_response["payments"].first).to have_attributes(attributes)
         end
       end
     end
 
     context "as an admin" do
-      sign_in_as_admin!
-
       it "can view the payments on any order" do
-        get spree.api_order_payments_path(order)
+        get spree.api_order_payments_path(order), headers: admin_user.create_new_auth_token
         expect(response.status).to eq(200)
         expect(json_response["payments"].first).to have_attributes(attributes)
       end
@@ -122,12 +136,12 @@ module Spree
         before { @payment = create(:payment, order: order) }
 
         it "can view all payments on an order" do
-          get spree.api_order_payments_path(order)
+          get spree.api_order_payments_path(order), headers: admin_user.create_new_auth_token
           expect(json_response["count"]).to eq(2)
         end
 
         it 'can control the page size through a parameter' do
-          get spree.api_order_payments_path(order), params: { per_page: 1 }
+          get spree.api_order_payments_path(order), headers: admin_user.create_new_auth_token, params: { per_page: 1 }
           expect(json_response['count']).to eq(1)
           expect(json_response['current_page']).to eq(1)
           expect(json_response['pages']).to eq(2)
@@ -138,7 +152,11 @@ module Spree
         context "updating" do
           it "can update" do
             payment.update_attributes(state: 'pending')
-            put spree.api_order_payment_path(order, payment), params: { payment: { amount: 2.01 } }
+
+            put spree.api_order_payment_path(order, payment),
+              headers: admin_user.create_new_auth_token,
+              params: { payment: { amount: 2.01 } }
+
             expect(response.status).to eq(200)
             expect(payment.reload.amount).to eq(2.01)
           end
@@ -146,14 +164,22 @@ module Spree
           context "update fails" do
             it "returns a 422 status when the amount is invalid" do
               payment.update_attributes(state: 'pending')
-              put spree.api_order_payment_path(order, payment), params: { payment: { amount: 'invalid' } }
+
+              put spree.api_order_payment_path(order, payment),
+                headers: admin_user.create_new_auth_token,
+                params: { payment: { amount: 'invalid' } }
+
               expect(response.status).to eq(422)
               expect(json_response["error"]).to eq("Invalid resource. Please fix errors and try again.")
             end
 
             it "returns a 403 status when the payment is not pending" do
               payment.update_attributes(state: 'completed')
-              put spree.api_order_payment_path(order, payment), params: { payment: { amount: 2.01 } }
+
+              put spree.api_order_payment_path(order, payment),
+                headers: admin_user.create_new_auth_token,
+                params: { payment: { amount: 2.01 } }
+
               expect(response.status).to eq(403)
               expect(json_response["error"]).to eq("This payment cannot be updated because it is completed.")
             end
@@ -162,7 +188,7 @@ module Spree
 
         context "authorizing" do
           it "can authorize" do
-            put spree.authorize_api_order_payment_path(order, payment)
+            put spree.authorize_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
             expect(response.status).to eq(200)
             expect(payment.reload.state).to eq("pending")
           end
@@ -171,7 +197,7 @@ module Spree
             before do
               fake_response = double(success?: false, to_s: "Could not authorize card")
               expect_any_instance_of(Spree::PaymentMethod::BogusCreditCard).to receive(:authorize).and_return(fake_response)
-              put spree.authorize_api_order_payment_path(order, payment)
+              put spree.authorize_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
             end
 
             it "returns a 422 status" do
@@ -189,7 +215,7 @@ module Spree
 
         context "capturing" do
           it "can capture" do
-            put spree.capture_api_order_payment_path(order, payment)
+            put spree.capture_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
             expect(response.status).to eq(200)
             expect(payment.reload.state).to eq("completed")
           end
@@ -201,7 +227,7 @@ module Spree
             end
 
             it "returns a 422 status" do
-              put spree.capture_api_order_payment_path(order, payment)
+              put spree.capture_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
               expect(response.status).to eq(422)
               expect(json_response["error"]).to eq "Invalid resource. Please fix errors and try again."
               expect(json_response["errors"]["base"][0]).to eq "Insufficient funds"
@@ -211,7 +237,7 @@ module Spree
 
         context "purchasing" do
           it "can purchase" do
-            put spree.purchase_api_order_payment_path(order, payment)
+            put spree.purchase_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
             expect(response.status).to eq(200)
             expect(payment.reload.state).to eq("completed")
           end
@@ -223,7 +249,7 @@ module Spree
             end
 
             it "returns a 422 status" do
-              put spree.purchase_api_order_payment_path(order, payment)
+              put spree.purchase_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
               expect(response.status).to eq(422)
               expect(json_response["error"]).to eq "Invalid resource. Please fix errors and try again."
               expect(json_response["errors"]["base"][0]).to eq "Insufficient funds"
@@ -233,7 +259,7 @@ module Spree
 
         context "voiding" do
           it "can void" do
-            put spree.void_api_order_payment_path(order, payment)
+            put spree.void_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
             expect(response.status).to eq 200
             expect(payment.reload.state).to eq "void"
           end
@@ -245,7 +271,7 @@ module Spree
             end
 
             it "returns a 422 status" do
-              put spree.void_api_order_payment_path(order, payment)
+              put spree.void_api_order_payment_path(order, payment), headers: admin_user.create_new_auth_token
               expect(response.status).to eq 422
               expect(json_response["error"]).to eq "Invalid resource. Please fix errors and try again."
               expect(json_response["errors"]["base"][0]).to eq "NO REFUNDS"
