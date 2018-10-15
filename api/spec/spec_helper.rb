@@ -48,6 +48,7 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  config.include Devise::Test::ControllerHelpers, type: :controller
   config.include FactoryBot::Syntax::Methods
   config.include Spree::Api::TestingSupport::Helpers, type: :request
   config.extend Spree::Api::TestingSupport::Setup, type: :request

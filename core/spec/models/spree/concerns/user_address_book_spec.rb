@@ -8,7 +8,7 @@ module Spree
     # Using LegacyUser as a subject
     # since it uses the UserAddressBookExtension
     #
-    let!(:user) { create(:user) }
+    let(:user) { create(:user) }
 
     describe "#save_in_address_book" do
       context "saving a default address" do

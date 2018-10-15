@@ -5,6 +5,9 @@ require 'shared_examples/protect_product_actions'
 
 module Spree
   describe Spree::Api::ProductsController, type: :request do
+    let(:user)       { create(:user)         }
+    let(:admin_user) { create(:user, :admin) }
+
     let!(:product) { create(:product) }
     let!(:inactive_product) { create(:product, available_on: Time.current.tomorrow, name: "inactive") }
     let(:base_attributes) { Api::ApiHelpers.product_attributes }
@@ -26,10 +29,6 @@ module Spree
       })
     end
 
-    before do
-      stub_authentication!
-    end
-
     context "as a normal user" do
       context "with caching enabled" do
         let!(:product_2) { create(:product) }
@@ -39,7 +38,7 @@ module Spree
         end
 
         it "returns unique products" do
-          get spree.api_products_path
+          get spree.api_products_path, headers: user.create_new_auth_token
           product_ids = json_response["products"].map { |p| p["id"] }
           expect(product_ids.uniq.count).to eq(product_ids.count)
         end
@@ -50,7 +49,7 @@ module Spree
       end
 
       it "retrieves a list of products" do
-        get spree.api_products_path
+        get spree.api_products_path, headers: user.create_new_auth_token
         expect(json_response["products"].first).to have_attributes(show_attributes)
         expect(json_response["total_count"]).to eq(1)
         expect(json_response["current_page"]).to eq(1)
@@ -59,7 +58,7 @@ module Spree
       end
 
       it "retrieves a list of products by id" do
-        get spree.api_products_path, params: { ids: [product.id] }
+        get spree.api_products_path, headers: user.create_new_auth_token, params: { ids: [product.id] }
         expect(json_response["products"].first).to have_attributes(show_attributes)
         expect(json_response["total_count"]).to eq(1)
         expect(json_response["current_page"]).to eq(1)
@@ -71,14 +70,14 @@ module Spree
         before { product.master.prices.create currency: "EUR", amount: 22 }
 
         it "returns distinct products only" do
-          get spree.api_products_path
+          get spree.api_products_path, headers: user.create_new_auth_token
           expect(assigns(:products).map(&:id).uniq).to eq assigns(:products).map(&:id)
         end
       end
 
       it "retrieves a list of products by ids string" do
         second_product = create(:product)
-        get spree.api_products_path, params: { ids: [product.id, second_product.id].join(",") }
+        get spree.api_products_path, headers: user.create_new_auth_token, params: { ids: [product.id, second_product.id].join(",") }
         expect(json_response["products"].first).to have_attributes(show_attributes)
         expect(json_response["products"][1]).to have_attributes(show_attributes)
         expect(json_response["total_count"]).to eq(2)
@@ -88,19 +87,19 @@ module Spree
       end
 
       it "does not return inactive products when queried by ids" do
-        get spree.api_products_path, params: { ids: [inactive_product.id] }
+        get spree.api_products_path, headers: user.create_new_auth_token, params: { ids: [inactive_product.id] }
         expect(json_response["count"]).to eq(0)
       end
 
       it "does not list unavailable products" do
-        get spree.api_products_path
+        get spree.api_products_path, headers: user.create_new_auth_token
         expect(json_response["products"].first["name"]).not_to eq("inactive")
       end
 
       context "pagination" do
         it "can select the next page of products" do
           create(:product)
-          get spree.api_products_path, params: { page: 2, per_page: 1 }
+          get spree.api_products_path, headers: user.create_new_auth_token, params: { page: 2, per_page: 1 }
           expect(json_response["products"].first).to have_attributes(show_attributes)
           expect(json_response["total_count"]).to eq(2)
           expect(json_response["current_page"]).to eq(2)
@@ -109,7 +108,7 @@ module Spree
 
         it 'can control the page size through a parameter' do
           create(:product)
-          get spree.api_products_path, params: { per_page: 1 }
+          get spree.api_products_path, headers: user.create_new_auth_token, params: { per_page: 1 }
           expect(json_response['count']).to eq(1)
           expect(json_response['total_count']).to eq(2)
           expect(json_response['current_page']).to eq(1)
@@ -119,7 +118,7 @@ module Spree
 
       it "can search for products" do
         create(:product, name: "The best product in the world")
-        get spree.api_products_path, params: { q: { name_cont: "best" } }
+        get spree.api_products_path, headers: user.create_new_auth_token, params: { q: { name_cont: "best" } }
         expect(json_response["products"].first).to have_attributes(show_attributes)
         expect(json_response["count"]).to eq(1)
       end
@@ -131,7 +130,7 @@ module Spree
         product.set_property("spree", "rocks")
         product.taxons << create(:taxon)
 
-        get spree.api_product_path(product)
+        get spree.api_product_path(product), headers: user.create_new_auth_token
 
         expect(json_response).to have_attributes(show_attributes)
         expect(json_response['variants'].first).to have_attributes([:name,
@@ -161,7 +160,7 @@ module Spree
         before { Config.track_inventory_levels = false }
 
         it "still displays valid json with total_on_hand Float::INFINITY" do
-          get spree.api_product_path(product)
+          get spree.api_product_path(product), headers: user.create_new_auth_token
           expect(response).to be_ok
           expect(json_response[:total_on_hand]).to eq nil
         end
@@ -177,27 +176,27 @@ module Spree
         end
 
         specify do
-          get spree.api_product_path(product)
+          get spree.api_product_path(product), headers: user.create_new_auth_token
           expect(json_response["slug"]).to match(/and-1-ways/)
           product.discard
 
-          get spree.api_product_path(other_product)
+          get spree.api_product_path(other_product), headers: user.create_new_auth_token
           expect(json_response["slug"]).to match(/droids/)
         end
       end
 
       it "cannot see inactive products" do
-        get spree.api_product_path(inactive_product)
+        get spree.api_product_path(inactive_product), headers: user.create_new_auth_token
         assert_not_found!
       end
 
       it "returns a 404 error when it cannot find a product" do
-        get spree.api_product_path("non-existant")
+        get spree.api_product_path("non-existant"), headers: user.create_new_auth_token
         assert_not_found!
       end
 
       it "can learn how to create a new product" do
-        get spree.new_api_product_path
+        get spree.new_api_product_path, headers: user.create_new_auth_token
         expect(json_response["attributes"]).to eq(new_attributes.map(&:to_s))
         required_attributes = json_response["required_attributes"]
         expect(required_attributes).to include("name")
@@ -212,10 +211,8 @@ module Spree
       let(:taxon_1) { create(:taxon) }
       let(:taxon_2) { create(:taxon) }
 
-      sign_in_as_admin!
-
       it "can see all products" do
-        get spree.api_products_path
+        get spree.api_products_path, headers: admin_user.create_new_auth_token
         expect(json_response["products"].count).to eq(2)
         expect(json_response["count"]).to eq(2)
         expect(json_response["current_page"]).to eq(1)
@@ -229,19 +226,19 @@ module Spree
         end
 
         it "does not include deleted products" do
-          get spree.api_products_path
+          get spree.api_products_path, headers: admin_user.create_new_auth_token
           expect(json_response["products"].count).to eq(2)
         end
 
         it "can include deleted products" do
-          get spree.api_products_path, params: { show_deleted: 1 }
+          get spree.api_products_path, headers: admin_user.create_new_auth_token, params: { show_deleted: 1 }
           expect(json_response["products"].count).to eq(3)
         end
       end
 
       describe "creating a product" do
         it "can create a new product" do
-          post spree.api_products_path, params: {
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: {
                                           product: { name: "The Other Product",
                                                                           price: 19.99,
                                                                           shipping_category_id: create(:shipping_category).id }
@@ -253,7 +250,7 @@ module Spree
         it "creates with embedded variants" do
           product_data[:variants] = [attributes_for_variant, attributes_for_variant]
 
-          post spree.api_products_path, params: { product: product_data }
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: product_data }
           expect(response.status).to eq 201
 
           variants = json_response['variants']
@@ -270,7 +267,7 @@ module Spree
               value: "cotton"
             }]
 
-          post spree.api_products_path, params: { product: product_data }
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: product_data }
 
           expect(json_response['product_properties'][0]['property_name']).to eq('fabric')
           expect(json_response['product_properties'][0]['value']).to eq('cotton')
@@ -279,7 +276,7 @@ module Spree
         it "can create a new product with option_types" do
           product_data[:option_types] = ['size', 'color']
 
-          post spree.api_products_path, params: { product: product_data }
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: product_data }
           expect(json_response['option_types'].count).to eq(2)
         end
 
@@ -288,7 +285,7 @@ module Spree
                    price: 19.99,
                    shipping_category: "Free Ships" }
 
-          post spree.api_products_path, params: { product: hash }
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: hash }
           expect(response.status).to eq 201
 
           shipping_id = ShippingCategory.find_by(name: "Free Ships").id
@@ -297,14 +294,14 @@ module Spree
 
         it "puts the created product in the given taxon" do
           product_data[:taxon_ids] = taxon_1.id.to_s
-          post spree.api_products_path, params: { product: product_data }
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: product_data }
           expect(json_response["taxon_ids"]).to eq([taxon_1.id])
         end
 
         # Regression test for https://github.com/spree/spree/issues/4123
         it "puts the created product in the given taxons" do
           product_data[:taxon_ids] = [taxon_1.id, taxon_2.id].join(',')
-          post spree.api_products_path, params: { product: product_data }
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: product_data }
           expect(json_response["taxon_ids"]).to eq([taxon_1.id, taxon_2.id])
         end
 
@@ -319,14 +316,14 @@ module Spree
           end
 
           it "can still create a product" do
-            post spree.api_products_path, params: { product: product_data, token: "fake" }
+            post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: product_data, token: "fake" }
             expect(json_response).to have_attributes(show_attributes)
             expect(response.status).to eq(201)
           end
         end
 
         it "cannot create a new product with invalid attributes" do
-          post spree.api_products_path, params: { product: { foo: :bar } }
+          post spree.api_products_path, headers: admin_user.create_new_auth_token, params: { product: { foo: :bar } }
           expect(response.status).to eq(422)
           expect(json_response["error"]).to eq("Invalid resource. Please fix errors and try again.")
           errors = json_response["errors"]
@@ -336,17 +333,17 @@ module Spree
 
       context 'updating a product' do
         it "can update a product" do
-          put spree.api_product_path(product), params: { product: { name: "New and Improved Product!" } }
+          put spree.api_product_path(product), headers: admin_user.create_new_auth_token, params: { product: { name: "New and Improved Product!" } }
           expect(response.status).to eq(200)
         end
 
         it "can create new option types on a product" do
-          put spree.api_product_path(product), params: { product: { option_types: ['shape', 'color'] } }
+          put spree.api_product_path(product), headers: admin_user.create_new_auth_token, params: { product: { option_types: ['shape', 'color'] } }
           expect(json_response['option_types'].count).to eq(2)
         end
 
         it "can create new variants on a product" do
-          put spree.api_product_path(product), params: { product: { variants: [attributes_for_variant, attributes_for_variant.merge(sku: "ABC-#{Kernel.rand(9999)}")] } }
+          put spree.api_product_path(product), headers: admin_user.create_new_auth_token, params: { product: { variants: [attributes_for_variant, attributes_for_variant.merge(sku: "ABC-#{Kernel.rand(9999)}")] } }
           expect(response.status).to eq 200
           expect(json_response['variants'].count).to eq(2) # 2 variants
 
@@ -363,7 +360,7 @@ module Spree
           }
           variant_id = product.variants.create!({ product: product }.merge(variant_hash)).id
 
-          put spree.api_product_path(product), params: { product: {
+          put spree.api_product_path(product), headers: admin_user.create_new_auth_token, params: { product: {
             variants: [
               variant_hash.merge(
                 id: variant_id.to_s,
@@ -381,7 +378,7 @@ module Spree
         end
 
         it "cannot update a product with an invalid attribute" do
-          put spree.api_product_path(product), params: { product: { name: "" } }
+          put spree.api_product_path(product), headers: admin_user.create_new_auth_token, params: { product: { name: "" } }
           expect(response.status).to eq(422)
           expect(json_response["error"]).to eq("Invalid resource. Please fix errors and try again.")
           expect(json_response["errors"]["name"]).to eq(["can't be blank"])
@@ -389,20 +386,20 @@ module Spree
 
         # Regression test for https://github.com/spree/spree/issues/4123
         it "puts the created product in the given taxon" do
-          put spree.api_product_path(product), params: { product: { taxon_ids: taxon_1.id.to_s } }
+          put spree.api_product_path(product), headers: admin_user.create_new_auth_token, params: { product: { taxon_ids: taxon_1.id.to_s } }
           expect(json_response["taxon_ids"]).to eq([taxon_1.id])
         end
 
         # Regression test for https://github.com/spree/spree/issues/4123
         it "puts the created product in the given taxons" do
-          put spree.api_product_path(product), params: { product: { taxon_ids: [taxon_1.id, taxon_2.id].join(',') } }
+          put spree.api_product_path(product), headers: admin_user.create_new_auth_token, params: { product: { taxon_ids: [taxon_1.id, taxon_2.id].join(',') } }
           expect(json_response["taxon_ids"]).to match_array([taxon_1.id, taxon_2.id])
         end
       end
 
       it "can delete a product" do
         expect(product.deleted_at).to be_nil
-        delete spree.api_product_path(product)
+        delete spree.api_product_path(product), headers: admin_user.create_new_auth_token
         expect(response.status).to eq(204)
         expect(product.reload.deleted_at).not_to be_nil
       end

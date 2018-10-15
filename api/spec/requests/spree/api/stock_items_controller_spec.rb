@@ -4,6 +4,9 @@ require 'spec_helper'
 
 module Spree
   describe Api::StockItemsController, type: :request do
+    let(:user)       { create(:user)         }
+    let(:admin_user) { create(:user, :admin) }
+
     let!(:stock_location) { create(:stock_location_with_items) }
     let!(:stock_item) { stock_location.stock_items.order(:id).first }
     let!(:attributes) {
@@ -11,14 +14,10 @@ module Spree
        :stock_location_id, :variant_id]
     }
 
-    before do
-      stub_authentication!
-    end
-
     context "as a normal user" do
       describe "#index" do
         it "can list stock items for an active stock location" do
-          get spree.api_stock_location_stock_items_path(stock_location)
+          get spree.api_stock_location_stock_items_path(stock_location), headers: user.create_new_auth_token
           expect(response).to be_successful
           expect(json_response['stock_items'].first).to have_attributes(attributes)
           expect(json_response['stock_items'].first['variant']['sku']).to match /\ASKU-\d+\z/
@@ -26,21 +25,21 @@ module Spree
 
         it "cannot list stock items for an inactive stock location" do
           stock_location.update_attributes!(active: false)
-          get spree.api_stock_location_stock_items_path(stock_location)
+          get spree.api_stock_location_stock_items_path(stock_location), headers: user.create_new_auth_token
           expect(response).to be_not_found
         end
       end
 
       describe "#show" do
         it "can see a stock item for an active stock location" do
-          get spree.api_stock_location_stock_item_path(stock_location, stock_item)
+          get spree.api_stock_location_stock_item_path(stock_location, stock_item), headers: user.create_new_auth_token
           expect(json_response).to have_attributes(attributes)
           expect(json_response['count_on_hand']).to eq stock_item.count_on_hand
         end
 
         it "cannot see a stock item for an inactive stock location" do
           stock_location.update_attributes!(active: false)
-          get spree.api_stock_location_stock_item_path(stock_location, stock_item)
+          get spree.api_stock_location_stock_item_path(stock_location, stock_item), headers: user.create_new_auth_token
           expect(response.status).to eq(404)
         end
       end
@@ -55,56 +54,54 @@ module Spree
             }
           }
 
-          post spree.api_stock_location_stock_items_path(stock_location), params: params
+          post spree.api_stock_location_stock_items_path(stock_location), headers: user.create_new_auth_token, params: params
           expect(response.status).to eq(401)
         end
       end
 
       describe "#update" do
         it "cannot update a stock item" do
-          put spree.api_stock_location_stock_item_path(stock_location, stock_item)
+          put spree.api_stock_location_stock_item_path(stock_location, stock_item), headers: user.create_new_auth_token
           expect(response.status).to eq(404)
         end
       end
 
       describe "#destroy" do
         it "cannot destroy a stock item" do
-          delete spree.api_stock_location_stock_item_path(stock_location, stock_item)
+          delete spree.api_stock_location_stock_item_path(stock_location, stock_item), headers: user.create_new_auth_token
           expect(response.status).to eq(404)
         end
       end
     end
 
     context "as an admin" do
-      sign_in_as_admin!
-
       it 'can list stock items' do
-        get spree.api_stock_location_stock_items_path(stock_location)
+        get spree.api_stock_location_stock_items_path(stock_location), headers: admin_user.create_new_auth_token
         expect(json_response['stock_items'].first).to have_attributes(attributes)
         expect(json_response['stock_items'].first['variant']['sku']).to include 'SKU'
       end
 
       it 'requires a stock_location_id to be passed as a parameter' do
-        get spree.api_stock_items_path
+        get spree.api_stock_items_path, headers: admin_user.create_new_auth_token
         expect(json_response['exception']).to eq('param is missing or the value is empty: stock_location_id')
         expect(response.status).to eq(422)
       end
 
       it 'can control the page size through a parameter' do
-        get spree.api_stock_location_stock_items_path(stock_location), params: { per_page: 1 }
+        get spree.api_stock_location_stock_items_path(stock_location), headers: admin_user.create_new_auth_token, params: { per_page: 1 }
         expect(json_response['count']).to eq(1)
         expect(json_response['current_page']).to eq(1)
       end
 
       it 'can query the results through a paramter' do
         stock_item.update_column(:count_on_hand, 30)
-        get spree.api_stock_location_stock_items_path(stock_location), params: { q: { count_on_hand_eq: '30' } }
+        get spree.api_stock_location_stock_items_path(stock_location), headers: admin_user.create_new_auth_token, params: { q: { count_on_hand_eq: '30' } }
         expect(json_response['count']).to eq(1)
         expect(json_response['stock_items'].first['count_on_hand']).to eq 30
       end
 
       it 'gets a stock item' do
-        get spree.api_stock_location_stock_item_path(stock_location, stock_item)
+        get spree.api_stock_location_stock_item_path(stock_location, stock_item), headers: admin_user.create_new_auth_token
         expect(json_response).to have_attributes(attributes)
         expect(json_response['count_on_hand']).to eq stock_item.count_on_hand
       end
@@ -128,7 +125,7 @@ module Spree
         end
 
         subject do
-          post spree.api_stock_location_stock_items_path(stock_location), params: params
+          post spree.api_stock_location_stock_items_path(stock_location), headers: admin_user.create_new_auth_token, params: params
         end
 
         it 'can create a new stock item' do
@@ -182,7 +179,7 @@ module Spree
         end
 
         subject do
-          put spree.api_stock_item_path(stock_item), params: params
+          put spree.api_stock_item_path(stock_item), headers: admin_user.create_new_auth_token, params: params
         end
 
         context 'adjusting count_on_hand' do
@@ -302,7 +299,7 @@ module Spree
       end
 
       it 'can delete a stock item' do
-        delete spree.api_stock_item_path(stock_item)
+        delete spree.api_stock_item_path(stock_item), headers: admin_user.create_new_auth_token
         expect(response.status).to eq(204)
         expect { Spree::StockItem.find(stock_item.id) }.to raise_error(ActiveRecord::RecordNotFound)
       end

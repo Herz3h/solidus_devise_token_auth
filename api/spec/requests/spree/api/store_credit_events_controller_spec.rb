@@ -3,17 +3,12 @@
 require 'spec_helper'
 
 describe Spree::Api::StoreCreditEventsController, type: :request do
-  let(:api_user) { create(:user, :with_api_key) }
+  let(:user) { create(:user) }
 
   describe "GET mine" do
-    subject do
-      get spree.mine_api_store_credit_events_path(format: :json), headers: { 'X-Spree-Token' => api_key }
-    end
-
     context "no current api user" do
-      let(:api_key) { nil }
-
-      before { subject }
+      subject { get spree.mine_api_store_credit_events_path(format: :json) }
+      before  { subject }
 
       it "returns a 401" do
         expect(response.status).to eq 401
@@ -21,8 +16,7 @@ describe Spree::Api::StoreCreditEventsController, type: :request do
     end
 
     context "the current api user is authenticated" do
-      let(:current_api_user) { create(:user, :with_api_key) }
-      let(:api_key) { current_api_user.spree_api_key }
+      subject { get spree.mine_api_store_credit_events_path(format: :json), headers: user.create_new_auth_token }
 
       context "the user doesn't have store credit" do
         before { subject }
@@ -37,7 +31,7 @@ describe Spree::Api::StoreCreditEventsController, type: :request do
       end
 
       context "the user has store credit" do
-        let!(:store_credit) { create(:store_credit, user: current_api_user) }
+        let!(:store_credit) { create(:store_credit, user: user) }
 
         before { subject }
 

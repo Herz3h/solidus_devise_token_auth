@@ -23,19 +23,6 @@ module Spree
           expect(response.status).to eq 401
         end
 
-        def stub_authentication!
-          raise NotImplementedError
-
-          # allow(Spree.user_class).to receive(:find_by).with(hash_including(:uid)) { current_api_user }
-          # allow_any_instance_of(Spree.user_class).to receive(:valid_token?).and_return(true)
-        end
-
-        # This method can be overriden (with a let block) inside a context
-        # For instance, if you wanted to have an admin user instead.
-        def current_api_user
-          @current_api_user ||= stub_model(Spree::LegacyUser, email: "spree@example.com", spree_roles: [])
-        end
-
         def image(filename)
           File.open(Spree::Api::Engine.root + "spec/fixtures" + filename)
         end

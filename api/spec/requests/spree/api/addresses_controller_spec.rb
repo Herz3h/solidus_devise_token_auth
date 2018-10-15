@@ -4,31 +4,32 @@ require 'spec_helper'
 
 module Spree
   describe Api::AddressesController, type: :request do
+    let(:user) { create(:user) }
+
     before do
-      stub_authentication!
       @address = create(:address)
       @order = create(:order, bill_address: @address)
     end
 
     context "with order" do
       before do
-        allow_any_instance_of(Order).to receive_messages user: current_api_user
+        allow_any_instance_of(Order).to receive_messages user: user
       end
 
       context "with their own address" do
         it "gets an address" do
-          get spree.api_order_address_path(@order, @address.id)
+          get spree.api_order_address_path(@order, @address.id), headers: user.create_new_auth_token
           expect(json_response['address1']).to eq @address.address1
         end
 
         it "update replaces the readonly Address associated to the Order" do
-          put spree.api_order_address_path(@order, @address.id), params: { address: { address1: "123 Test Lane" } }
+          put spree.api_order_address_path(@order, @address.id), headers: user.create_new_auth_token, params: { address: { address1: "123 Test Lane" } }
           expect(Order.find(@order.id).bill_address_id).not_to eq @address.id
           expect(json_response['address1']).to eq '123 Test Lane'
         end
 
         it "receives the errors object if address is invalid" do
-          put spree.api_order_address_path(@order, @address.id), params: { address: { address1: "" } }
+          put spree.api_order_address_path(@order, @address.id), headers: user.create_new_auth_token, params: { address: { address1: "" } }
 
           expect(json_response['error']).not_to be_nil
           expect(json_response['errors']).not_to be_nil
@@ -44,12 +45,12 @@ module Spree
       end
 
       it "cannot retrieve address information" do
-        get spree.api_order_address_path(@order, @address.id)
+        get spree.api_order_address_path(@order, @address.id), headers: user.create_new_auth_token
         assert_unauthorized!
       end
 
       it "cannot update address information" do
-        get spree.api_order_address_path(@order, @address.id)
+        get spree.api_order_address_path(@order, @address.id), headers: user.create_new_auth_token
         assert_unauthorized!
       end
     end

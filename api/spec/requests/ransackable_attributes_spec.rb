@@ -3,13 +3,13 @@
 require 'spec_helper'
 
 describe "Ransackable Attributes" do
-  let(:user) { create(:user).tap(&:generate_spree_api_key!) }
+  let(:user) { create(:user) }
   let(:order) { create(:order_with_line_items, user: user) }
   context "filtering by attributes one association away" do
     it "does not allow the filtering of variants by order attributes" do
       2.times { create(:variant) }
 
-      get "/api/variants?q[orders_email_start]=#{order.email}", params: { token: user.spree_api_key }
+      get "/api/variants?q[orders_email_start]=#{order.email}", headers: user.create_new_auth_token
 
       variants_response = JSON.parse(response.body)
       expect(variants_response['total_count']).to eq(Spree::Variant.count)
@@ -20,7 +20,7 @@ describe "Ransackable Attributes" do
     it "does not allow the filtering of variants by user attributes" do
       2.times { create(:variant) }
 
-      get "/api/variants?q[orders_user_email_start]=#{order.user.email}", params: { token: user.spree_api_key }
+      get "/api/variants?q[orders_user_email_start]=#{order.user.email}", headers: user.create_new_auth_token
 
       variants_response = JSON.parse(response.body)
       expect(variants_response['total_count']).to eq(Spree::Variant.count)
@@ -33,7 +33,7 @@ describe "Ransackable Attributes" do
       variant = create(:variant, product: product)
       other_variant = create(:variant)
 
-      get "/api/variants?q[product_name_or_sku_cont]=fritos", params: { token: user.spree_api_key }
+      get "/api/variants?q[product_name_or_sku_cont]=fritos", headers: user.create_new_auth_token
 
       skus = JSON.parse(response.body)['variants'].map { |x| x['sku'] }
       expect(skus).to include variant.sku
@@ -46,7 +46,7 @@ describe "Ransackable Attributes" do
       create(:product, description: "special product")
       create(:product)
 
-      get "/api/products?q[description_cont]=special", params: { token: user.spree_api_key }
+      get "/api/products?q[description_cont]=special", headers: user.create_new_auth_token
 
       products_response = JSON.parse(response.body)
       expect(products_response['total_count']).to eq(Spree::Product.count)
@@ -56,7 +56,7 @@ describe "Ransackable Attributes" do
       product = create(:product)
       other_product = create(:product)
 
-      get "/api/products?q[id_eq]=#{product.id}", params: { token: user.spree_api_key }
+      get "/api/products?q[id_eq]=#{product.id}", headers: user.create_new_auth_token
 
       product_names = JSON.parse(response.body)['products'].map { |x| x['name'] }
       expect(product_names).to include product.name
@@ -69,7 +69,7 @@ describe "Ransackable Attributes" do
       product = create(:product, name: "Fritos")
       other_product = create(:product)
 
-      get "/api/products?q[name_cont]=fritos", params: { token: user.spree_api_key }
+      get "/api/products?q[name_cont]=fritos", headers: user.create_new_auth_token
 
       product_names = JSON.parse(response.body)['products'].map { |x| x['name'] }
       expect(product_names).to include product.name

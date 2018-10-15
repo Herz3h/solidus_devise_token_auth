@@ -35,64 +35,67 @@ module Spree
       }.to change { Spree.user_class.count }.by 1
       expect(response).to have_http_status(:created)
       @user = Spree.user_class.find(parsed['id'])
-
-      # copied from api testing helpers support since we can't really sign in
-      allow(Spree::LegacyUser).to receive(:find_by).with(hash_including(:spree_api_key)) { @user }
+      @user.create_new_auth_token
     end
 
-    def create_order(order_params: {})
-      expect { post '/api/orders', params: order_params }.to change { Order.count }.by 1
+    def create_order(order_headers: {}, order_params: {})
+      expect {
+        post '/api/orders', headers: order_headers, params: order_params
+      }.to change { Order.count }.by 1
       expect(response).to have_http_status(:created)
       @order = Order.find(parsed['id'])
       expect(@order.email).to eq "featurecheckoutuser@example.com"
     end
 
-    def update_order(order_params: {})
-      put "/api/orders/#{@order.number}", params: order_params
+    def update_order(order_params: {}, order_headers: {})
+      put "/api/orders/#{@order.number}", headers: order_headers, params: order_params
       expect(response).to have_http_status(:ok)
     end
 
-    def create_line_item(variant, quantity = 1)
+    def create_line_item(variant, quantity = 1, headers: {})
       expect {
         post "/api/orders/#{@order.number}/line_items",
-          params: { line_item: { variant_id: variant.id, quantity: quantity } }
+          headers: headers, params: { line_item: { variant_id: variant.id, quantity: quantity } }
       }.to change { @order.line_items.count }.by 1
       expect(response).to have_http_status(:created)
     end
 
-    def add_promotion(_promotion)
+    def add_promotion(_promotion, headers: {})
       expect {
         put "/api/orders/#{@order.number}/apply_coupon_code",
-          params: { coupon_code: promotion_code.value }
+          headers: headers, params: { coupon_code: promotion_code.value }
       }.to change { @order.promotions.count }.by 1
       expect(response).to have_http_status(:ok)
     end
 
-    def add_address(address, billing: true)
+    def add_address(address, billing: true, headers: {})
       address_type = billing ? :bill_address : :ship_address
       # It seems we are missing an order-scoped address api endpoint since we need
       # to use update here.
       expect {
-        update_order(order_params: { order: { address_type => address.attributes.except('id') } })
+        update_order(
+          order_headers: headers,
+          order_params: { order: { address_type => address.attributes.except('id') } },
+        )
       }.to change { @order.reload.public_send(address_type) }.to address
     end
 
-    def add_payment
+    def add_payment(headers: {})
       expect {
         post "/api/orders/#{@order.number}/payments",
-          params: { payment: { payment_method_id: payment_method.id } }
+          headers: headers, params: { payment: { payment_method_id: payment_method.id } }
       }.to change { @order.reload.payments.count }.by 1
       expect(response).to have_http_status(:created)
       expect(@order.payments.last.payment_method).to eq payment_method
     end
 
-    def advance
-      put "/api/checkouts/#{@order.number}/advance"
+    def advance(headers: {})
+      put "/api/checkouts/#{@order.number}/advance", headers: headers
       expect(response).to have_http_status(:ok)
     end
 
-    def complete
-      put "/api/checkouts/#{@order.number}/complete"
+    def complete(headers: {})
+      put "/api/checkouts/#{@order.number}/complete", headers: headers
       expect(response).to have_http_status(:ok)
     end
 
@@ -114,28 +117,29 @@ module Spree
     end
 
     it "is able to checkout with individualized requests" do
-      login
-      create_order
+      user_token = login
 
-      create_line_item(variant_1, 2)
-      add_promotion(promotion)
-      create_line_item(variant_2, 2)
+      create_order(order_headers: user_token)
 
-      add_address(bill_address)
-      add_address(ship_address, billing: false)
+      create_line_item(variant_1, 2, headers: user_token)
+      add_promotion(promotion, headers: user_token)
+      create_line_item(variant_2, 2, headers: user_token)
 
-      add_payment
+      add_address(bill_address, headers: user_token)
+      add_address(ship_address, billing: false, headers: user_token)
 
-      advance
-      complete
+      add_payment(headers: user_token)
+
+      advance(headers: user_token)
+      complete(headers: user_token)
 
       assert_order_expectations
     end
 
     it "is able to checkout with the create request" do
-      login
+      user_token = login
 
-      create_order(order_params: {
+      create_order(order_headers: user_token, order_params: {
         order: {
           bill_address: bill_address.as_json.except('id'),
           ship_address: ship_address.as_json.except('id'),
@@ -154,20 +158,20 @@ module Spree
         }
       })
 
-      add_promotion(promotion)
-      add_payment
+      add_promotion(promotion, headers: user_token)
+      add_payment(headers: user_token)
 
-      advance
-      complete
+      advance(headers: user_token)
+      complete(headers: user_token)
 
       assert_order_expectations
     end
 
     it "is able to checkout with the update request" do
-      login
+      user_token = login
 
-      create_order
-      update_order(order_params: {
+      create_order(order_headers: user_token)
+      update_order(order_headers: user_token, order_params: {
         order: {
           bill_address: bill_address.as_json.except('id'),
           ship_address: ship_address.as_json.except('id'),
@@ -186,11 +190,11 @@ module Spree
         }
       })
 
-      add_promotion(promotion)
-      add_payment
+      add_promotion(promotion, headers: user_token)
+      add_payment(headers: user_token)
 
-      advance
-      complete
+      advance(headers: user_token)
+      complete(headers: user_token)
 
       assert_order_expectations
     end

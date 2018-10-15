@@ -36,12 +36,12 @@ module Spree
     context 'as address book owner' do
       context 'with ability' do
         it 'returns my address book' do
-          user = create(:user, spree_api_key: 'galleon')
+          user = create(:user)
           user.save_in_address_book(harry_address_attributes, true)
           user.save_in_address_book(ron_address_attributes, false)
 
           get "/api/users/#{user.id}/address_book",
-            headers: { 'X-SPREE-TOKEN' => 'galleon' }
+            headers: user.create_new_auth_token
 
           json_response = JSON.parse(response.body)
           expect(response.status).to eq(200)
@@ -53,14 +53,14 @@ module Spree
         end
 
         it 'updates my address book' do
-          user = create(:user, spree_api_key: 'galleon')
+          user = create(:user)
           address = user.save_in_address_book(harry_address_attributes, true)
           harry_address_attributes['firstname'] = 'Ron'
 
           expect {
             put "/api/users/#{user.id}/address_book",
               params:  { address_book: harry_address_attributes.merge('id' => address.id) },
-              headers: { 'X-SPREE-TOKEN' => 'galleon' }
+              headers: user.create_new_auth_token
           }.to change { UserAddress.count }.from(1).to(2)
 
           expect(response.status).to eq(200)
@@ -69,12 +69,12 @@ module Spree
 
         context 'when creating an address' do
           it 'marks the update_target' do
-            user = create(:user, spree_api_key: 'galleon')
+            user = create(:user)
 
             expect {
               put "/api/users/#{user.id}/address_book",
                 params:  { address_book: harry_address_attributes },
-                headers: { 'X-SPREE-TOKEN' => 'galleon' }
+                headers: user.create_new_auth_token
             }.to change { UserAddress.count }.by(1)
 
             user_address = UserAddress.last
@@ -87,13 +87,13 @@ module Spree
 
         context 'when updating an address' do
           it 'marks the update_target' do
-            user = create(:user, spree_api_key: 'galleon')
+            user = create(:user)
             address = user.save_in_address_book(harry_address_attributes, true)
 
             expect {
               put "/api/users/#{user.id}/address_book",
                 params:  { address_book: harry_address_attributes },
-                headers: { 'X-SPREE-TOKEN' => 'galleon' }
+                headers: user.create_new_auth_token
             }.to_not change { UserAddress.count }
 
             expect(response.status).to eq(200)
@@ -104,13 +104,13 @@ module Spree
 
         it 'archives my address' do
           address = create(:address)
-          user = create(:user, spree_api_key: 'galleon')
+          user = create(:user)
           user.save_in_address_book(address.attributes, false)
 
           expect {
             delete "/api/users/#{user.id}/address_book",
               params:  { address_id: address.id },
-              headers: { 'X-SPREE-TOKEN' => 'galleon' }
+              headers: user.create_new_auth_token
           }.to change { user.reload.user_addresses.count }.from(1).to(0)
 
           expect(response.status).to eq(200)
@@ -120,18 +120,16 @@ module Spree
 
     context 'on behalf of address book owner' do
       context 'with ability' do
-        before do
-          Spree::Config.roles.assign_permissions 'Prefect', [Spree::PermissionSets::UserManagement]
-          create(:user, spree_api_key: 'galleon', spree_roles: [build(:role, name: 'Prefect')])
-        end
+        before { Spree::Config.roles.assign_permissions 'Prefect', [Spree::PermissionSets::UserManagement] }
+
+        let(:basic_user) { create(:user, spree_roles: [build(:role, name: 'Prefect')]) }
 
         it "returns another user's address book" do
           other_user = create(:user)
           other_user.save_in_address_book(harry_address_attributes, true)
           other_user.save_in_address_book(ron_address_attributes, false)
 
-          get "/api/users/#{other_user.id}/address_book",
-            headers: { 'X-SPREE-TOKEN' => 'galleon' }
+          get "/api/users/#{other_user.id}/address_book", headers: basic_user.create_new_auth_token
 
           json_response = JSON.parse(response.body)
           expect(response.status).to eq(200)
@@ -149,8 +147,8 @@ module Spree
 
           expect {
             put "/api/users/#{other_user.id}/address_book",
-            params:  { address_book: updated_harry_address.merge('id' => address.id) },
-            headers: { 'X-SPREE-TOKEN' => 'galleon' }
+            headers: basic_user.create_new_auth_token,
+            params:  { address_book: updated_harry_address.merge('id' => address.id) }
           }.to change { UserAddress.count }.from(1).to(2)
 
           expect(response.status).to eq(200)
@@ -164,8 +162,8 @@ module Spree
 
           expect {
             delete "/api/users/#{other_user.id}/address_book",
-              params:  { address_id: address.id },
-              headers: { 'X-SPREE-TOKEN' => 'galleon' }
+              headers: basic_user.create_new_auth_token,
+              params:  { address_id: address.id }
           }.to change { other_user.reload.user_addresses.count }.from(1).to(0)
 
           expect(response.status).to eq(200)
@@ -174,12 +172,12 @@ module Spree
 
       context 'without ability' do
         it 'does not return another user address book' do
-          create(:user, spree_api_key: 'galleon')
+          some_user = create(:user)
           other_user = create(:user)
           other_user.save_in_address_book(harry_address_attributes, true)
 
           get "/api/users/#{other_user.id}/address_book",
-            headers: { 'X-SPREE-TOKEN' => 'galleon' }
+            headers: some_user.create_new_auth_token
 
           expect(response.status).to eq(401)
         end
@@ -188,12 +186,12 @@ module Spree
           address = create(:address)
           other_user = create(:user)
           other_user_address = other_user.save_in_address_book(address.attributes, true)
-          create(:user, spree_api_key: 'galleon')
+          some_other_user = create(:user)
 
           expect {
             put "/api/users/#{other_user.id}/address_book",
             params:  { address_book: other_user_address.attributes.merge('address1' => 'Hogwarts') },
-            headers: { 'X-SPREE-TOKEN' => 'galleon' }
+            headers: some_other_user.create_new_auth_token
           }.not_to change { UserAddress.count }
 
           expect(response.status).to eq(401)
@@ -203,12 +201,12 @@ module Spree
           address = create(:address)
           other_user = create(:user)
           other_user.save_in_address_book(address.attributes, true)
-          create(:user, spree_api_key: 'galleon')
+          some_other_user = create(:user)
 
           expect {
             delete "/api/users/#{other_user.id}/address_book",
               params:  { address_id: address.id },
-              headers: { 'X-SPREE-TOKEN' => 'galleon' }
+              headers: some_other_user.create_new_auth_token
           }.not_to change { other_user.user_addresses.count }
 
           expect(response.status).to eq(401)

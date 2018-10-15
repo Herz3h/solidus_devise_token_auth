@@ -4,8 +4,9 @@ require 'spec_helper'
 
 module Spree
   describe Api::CheckoutsController, type: :request do
+    let(:admin_user) { create(:user, :admin) }
+
     before(:each) do
-      stub_authentication!
       Spree::Config[:track_inventory_levels] = false
       country_zone = create(:zone, name: 'CountryZone')
       @state = create(:state)
@@ -340,11 +341,10 @@ module Spree
       end
 
       context "as an admin" do
-        sign_in_as_admin!
         it "can assign a user to the order" do
           user = create(:user)
           # Need to pass email as well so that validations succeed
-          put spree.api_checkout_path(order.to_param), params: { order_token: order.guest_token, order: { user_id: user.id, email: "guest@spreecommerce.com" } }
+          put spree.api_checkout_path(order.to_param), headers: admin_user.create_new_auth_token, params: { order_token: order.guest_token, order: { user_id: user.id, email: "guest@spreecommerce.com" } }
           expect(response.status).to eq(200)
           expect(json_response['user_id']).to eq(user.id)
         end

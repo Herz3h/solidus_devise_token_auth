@@ -4,21 +4,19 @@ require 'spec_helper'
 
 module Spree
   describe Api::StatesController, type: :request do
+    let(:user) { create(:user) }
+
     let!(:state) { create(:state, name: "Victoria") }
     let(:attributes) { [:id, :name, :abbr, :country_id] }
 
-    before do
-      stub_authentication!
-    end
-
     it "gets all states" do
-      get spree.api_states_path
+      get spree.api_states_path, headers: user.create_new_auth_token
       expect(json_response["states"].first).to have_attributes(attributes)
       expect(json_response['states'].first['name']).to eq(state.name)
     end
 
     it "gets all the states for a particular country" do
-      get spree.api_country_states_path(state.country)
+      get spree.api_country_states_path(state.country), headers: user.create_new_auth_token
       expect(json_response["states"].first).to have_attributes(attributes)
       expect(json_response['states'].first['name']).to eq(state.name)
     end
@@ -26,7 +24,7 @@ module Spree
     context "pagination" do
       it "can select the next page and control page size" do
         create(:state)
-        get spree.api_states_path, params: { page: 2, per_page: 1 }
+        get spree.api_states_path, headers: user.create_new_auth_token, params: { page: 2, per_page: 1 }
 
         expect(json_response).to be_paginated
         expect(json_response["states"].size).to eq(1)
@@ -44,25 +42,25 @@ module Spree
         state.country = country
         state.save
 
-        get spree.api_country_states_path(country)
+        get spree.api_country_states_path(country), headers: user.create_new_auth_token
         expect(json_response["states"].first).to have_attributes(attributes)
         expect(json_response["states"].count).to eq(1)
         json_response["states_required"] = true
       end
 
       it "can view all states" do
-        get spree.api_states_path
+        get spree.api_states_path, headers: user.create_new_auth_token
         expect(json_response["states"].first).to have_attributes(attributes)
       end
 
       it 'can query the results through a paramter' do
-        get spree.api_states_path, params: { q: { name_cont: 'Vic' } }
+        get spree.api_states_path, headers: user.create_new_auth_token, params: { q: { name_cont: 'Vic' } }
         expect(json_response['states'].first['name']).to eq("Victoria")
       end
     end
 
     it "can view a state" do
-      get spree.api_state_path(state)
+      get spree.api_state_path(state), headers: user.create_new_auth_token
       expect(json_response).to have_attributes(attributes)
     end
   end

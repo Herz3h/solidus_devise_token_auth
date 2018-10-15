@@ -3,16 +3,15 @@
 require 'spec_helper'
 
 describe "Rabl Cache", type: :request, caching: true do
-  let!(:user)  { create(:admin_user) }
+  let(:user) { create(:user, :admin) }
 
   before do
     create(:variant)
-    user.generate_spree_api_key!
     expect(Spree::Product.count).to eq(1)
   end
 
   it "doesn't create a cache key collision for models with different rabl templates" do
-    get "/api/variants", params: { token: user.spree_api_key }
+    get "/api/variants", headers: user.create_new_auth_token
     expect(response.status).to eq(200)
 
     # Make sure we get a non master variant
@@ -23,7 +22,7 @@ describe "Rabl Cache", type: :request, caching: true do
     expect(variant_a['is_master']).to be false
     expect(variant_a['stock_items']).not_to be_nil
 
-    get "/api/products/#{Spree::Product.first.id}", params: { token: user.spree_api_key }
+    get "/api/products/#{Spree::Product.first.id}", headers: user.create_new_auth_token
     expect(response.status).to eq(200)
     variant_b = JSON.parse(response.body)['variants'].last
     expect(variant_b['is_master']).to be false
