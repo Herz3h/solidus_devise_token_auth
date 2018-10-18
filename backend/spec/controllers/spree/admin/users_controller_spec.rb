@@ -40,6 +40,7 @@ describe Spree::Admin::UsersController, type: :controller do
         post :index
         expect(response).to be_successful
       end
+    end
 
     context "without ability to admin users" do
       stub_authorization! do |_user|

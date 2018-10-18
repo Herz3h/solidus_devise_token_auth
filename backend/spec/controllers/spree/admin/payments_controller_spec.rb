@@ -9,7 +9,7 @@ module Spree
         allow(controller).to receive_messages spree_current_user: user
       end
 
-      let(:user) { create(:admin_user) }
+      let(:user) { create(:user, :admin) }
       let(:order) { create(:order) }
 
       describe '#create' do

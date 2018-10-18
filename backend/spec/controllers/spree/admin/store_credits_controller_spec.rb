@@ -11,8 +11,8 @@ end
 describe Spree::Admin::StoreCreditsController do
   stub_authorization!
 
-  let(:user) { create(:user) }
-  let(:admin_user) { create(:admin_user) }
+  let(:user)       { create(:user) }
+  let(:admin_user) { create(:user, :admin) }
 
   let!(:b_credit_category) { create(:store_credit_category, name: "B category") }
   let!(:a_credit_category) { create(:store_credit_category, name: "A category") }

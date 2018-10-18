@@ -238,6 +238,7 @@ describe 'Users', type: :feature do
         end
       end
     end
+  end
 
   context 'order history with sorting' do
     before do

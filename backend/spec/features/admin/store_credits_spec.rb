@@ -4,7 +4,7 @@ require 'spec_helper'
 
 describe "Store credits admin" do
   stub_authorization!
-  let!(:admin_user)   { create(:admin_user) }
+  let!(:admin_user)   { create(:user, :admin) }
   let!(:store_credit) { create(:store_credit) }
   let(:user)          { store_credit.user }
 
