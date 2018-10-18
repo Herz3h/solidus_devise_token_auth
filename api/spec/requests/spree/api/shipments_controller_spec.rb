@@ -428,7 +428,7 @@ describe Spree::Api::ShipmentsController, type: :request do
       end
 
       context "if the user can not update shipments" do
-        let(:user) { create(:user, spree_api_key: 'abc123') }
+        let(:user) { create(:user) }
 
         custom_authorization! do |_|
           can :read, Spree::Shipment
@@ -444,7 +444,7 @@ describe Spree::Api::ShipmentsController, type: :request do
       end
 
       context "if the user can not destroy shipments" do
-        let(:user) { create(:user, spree_api_key: 'abc123') }
+        let(:user) { create(:user) }
 
         custom_authorization! do |_|
           can :read, Spree::Shipment
