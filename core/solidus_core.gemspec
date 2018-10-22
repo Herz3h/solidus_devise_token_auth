@@ -9,10 +9,10 @@ Gem::Specification.new do |s|
   s.summary     = 'Essential models, mailers, and classes for the Solidus e-commerce project (devise_token_auth revised version)'
   s.description = s.summary
 
-  gem.author    = 'Michał Siwek (skycocker)'
-  gem.email     = 'mike21@aol.pl'
-  gem.homepage  = 'https://github.com/skycocker/solidus/tree/master/core'
-  s.license     = 'BSD-3-Clause'
+  s.author    = 'Michał Siwek (skycocker)'
+  s.email     = 'mike21@aol.pl'
+  s.homepage  = 'https://github.com/skycocker/solidus/tree/master/core'
+  s.license   = 'BSD-3-Clause'
 
   s.files        = `git ls-files`.split("\n")
   s.require_path = 'lib'
