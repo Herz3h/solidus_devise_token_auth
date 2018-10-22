@@ -4,14 +4,14 @@ require_relative '../core/lib/spree/core/version.rb'
 
 Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
-  s.name        = 'solidus_core'
+  s.name        = 'solidus_core_devise_token_auth'
   s.version     = Spree.solidus_version
-  s.summary     = 'Essential models, mailers, and classes for the Solidus e-commerce project.'
+  s.summary     = 'Essential models, mailers, and classes for the Solidus e-commerce project (devise_token_auth revised version)'
   s.description = s.summary
 
-  s.author      = 'Solidus Team'
-  s.email       = 'contact@solidus.io'
-  s.homepage    = 'http://solidus.io'
+  gem.author    = 'Michał Siwek (skycocker)'
+  gem.email     = 'mike21@aol.pl'
+  gem.homepage  = 'https://github.com/skycocker/solidus/tree/master/core'
   s.license     = 'BSD-3-Clause'
 
   s.files        = `git ls-files`.split("\n")

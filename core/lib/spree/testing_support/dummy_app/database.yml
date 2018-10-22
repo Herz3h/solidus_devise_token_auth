@@ -19,7 +19,6 @@ test:
 test:
   adapter: postgresql
   database: <%= database_prefix %>_test
-  username: postgres
   min_messages: warning
 <% unless db_host.blank? %>
   host: <%= db_host %>

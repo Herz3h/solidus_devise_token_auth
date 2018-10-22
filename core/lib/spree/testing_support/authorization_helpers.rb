@@ -42,7 +42,9 @@ module Spree
 
           before do
             allow(Spree.user_class).to receive(:find_by).
-                                         and_return(Spree.user_class.new)
+                                         and_return(Spree.user_class.new(email: 'lubie@placki.com', password: 'lubieplacki123'))
+            allow_any_instance_of(Spree.user_class).to receive(:valid_token?).
+                                         and_return(true)
           end
         end
 
