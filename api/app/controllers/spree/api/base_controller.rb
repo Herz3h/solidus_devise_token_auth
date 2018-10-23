@@ -7,7 +7,8 @@ module Spree
     class BaseController < ActionController::Base
       self.responder = Spree::Api::Responders::AppResponder
       respond_to :json
-      protect_from_forgery unless: -> { request.format.json? }
+
+      skip_forgery_protection
 
       include CanCan::ControllerAdditions
       include Spree::Core::ControllerHelpers::Store
@@ -108,11 +109,6 @@ module Spree
         @spree_resource = resource
         render "spree/api/errors/invalid_resource", status: 422
       end
-
-      def api_key
-        request.headers["X-Spree-Token"] || params[:token]
-      end
-      helper_method :api_key
 
       def order_token
         request.headers["X-Spree-Order-Token"] || params[:order_token]
