@@ -2,7 +2,7 @@
 
 module Spree
   def self.solidus_version
-    "2.8.0.alpha.1"
+    "2.8.0.alpha.devise_token_auth"
   end
 
   def self.solidus_gem_version
