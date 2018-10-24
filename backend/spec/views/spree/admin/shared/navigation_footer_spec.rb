@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 describe "spree/admin/shared/_navigation_footer", type: :view do
-  let(:user) { FactoryBot.build_stubbed(:admin_user) }
+  let(:user) { FactoryBot.build_stubbed(:user, :admin) }
   let(:ability) { Object.new.extend(CanCan::Ability) }
   before do
     allow(view).to receive(:try_spree_current_user).and_return(user)

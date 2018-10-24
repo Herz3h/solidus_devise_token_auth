@@ -4,7 +4,7 @@ require_relative '../core/lib/spree/core/version.rb'
 
 Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
-  s.name        = 'solidus_frontend'
+  s.name        = 'solidus_frontend_devise_token_auth'
   s.version     = Spree.solidus_version
   s.summary     = 'Cart and storefront for the Solidus e-commerce project.'
   s.description = s.summary
@@ -21,8 +21,8 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.2.2'
   s.required_rubygems_version = '>= 1.8.23'
 
-  s.add_dependency 'solidus_api', s.version
-  s.add_dependency 'solidus_core', s.version
+  s.add_dependency 'solidus_api_devise_token_auth', s.version
+  s.add_dependency 'solidus_core_devise_token_auth', s.version
 
   s.add_dependency 'canonical-rails', '~> 0.2.0'
   s.add_dependency 'font-awesome-rails', '~> 4.0'

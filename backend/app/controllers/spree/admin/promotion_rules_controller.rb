@@ -9,6 +9,7 @@ class Spree::Admin::PromotionRulesController < Spree::Admin::BaseController
   def create
     @promotion_rule = @promotion_rule_type.new(promotion_rule_params)
     @promotion_rule.promotion = @promotion
+
     if @promotion_rule.save
       flash[:success] = t('spree.successfully_created', resource: t('spree.promotion_rule'))
     end

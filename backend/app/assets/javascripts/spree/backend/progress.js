@@ -3,7 +3,8 @@ Spree.ready(function() {
     $("#progress").show();
   });
 
-  $(document).ajaxStop(function() {
-    $("#progress").hide();
-  });
+  // overridden in devise_token_auth.js
+  // $(document).ajaxStop(function() {
+  //   $("#progress").hide();
+  // });
 });

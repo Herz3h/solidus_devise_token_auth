@@ -90,8 +90,8 @@ RSpec.describe Spree::Order, type: :model do
   end
 
   context "#canceled_by" do
-    let(:admin_user) { create :admin_user }
-    let(:order) { create :order }
+    let(:admin_user) { create :user, :admin }
+    let(:order)      { create :order }
 
     before do
       allow(order).to receive(:cancel!)

@@ -7,7 +7,7 @@ describe Spree::ProductsController, type: :controller do
 
   # Regression test for https://github.com/spree/spree/issues/1390
   it "allows admins to view non-active products" do
-    allow(controller).to receive_messages spree_current_user: mock_model(Spree.user_class, has_spree_role?: true, last_incomplete_spree_order: nil, spree_api_key: 'fake')
+    allow(controller).to receive_messages spree_current_user: mock_model(Spree.user_class, has_spree_role?: true, last_incomplete_spree_order: nil)
     get :show, params: { id: product.to_param }
     expect(response.status).to eq(200)
   end
@@ -19,7 +19,7 @@ describe Spree::ProductsController, type: :controller do
   end
 
   it "should provide the current user to the searcher class" do
-    user = mock_model(Spree.user_class, last_incomplete_spree_order: nil, spree_api_key: 'fake')
+    user = mock_model(Spree.user_class, last_incomplete_spree_order: nil)
     allow(controller).to receive_messages spree_current_user: user
     expect_any_instance_of(Spree::Config.searcher_class).to receive(:current_user=).with(user)
     get :index
@@ -28,7 +28,7 @@ describe Spree::ProductsController, type: :controller do
 
   # Regression test for https://github.com/spree/spree/issues/2249
   it "doesn't error when given an invalid referer" do
-    current_user = mock_model(Spree.user_class, has_spree_role?: true, last_incomplete_spree_order: nil, generate_spree_api_key!: nil)
+    current_user = mock_model(Spree.user_class, has_spree_role?: true, last_incomplete_spree_order: nil)
     allow(controller).to receive_messages spree_current_user: current_user
     request.env['HTTP_REFERER'] = "not|a$url"
 

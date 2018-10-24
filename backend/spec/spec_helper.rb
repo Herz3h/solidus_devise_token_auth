@@ -19,6 +19,7 @@ DummyApp.setup(
 require 'rails-controller-testing'
 require 'rspec-activemodel-mocks'
 require 'rspec/rails'
+require 'pry'
 
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.

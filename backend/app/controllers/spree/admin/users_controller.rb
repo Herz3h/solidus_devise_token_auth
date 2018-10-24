@@ -116,6 +116,7 @@ module Spree
         end
 
         params.require(:user).permit(attributes)
+                             .reject { |k, v| %w(password password_confirmation).include?(k) && v.blank? }
       end
 
       # handling raise from Spree::Admin::ResourceController#destroy

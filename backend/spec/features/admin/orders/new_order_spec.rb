@@ -189,7 +189,9 @@ describe "New Order", type: :feature do
     end
   end
 
-  context "customer with attempted XSS", js: true do
+  # this is now prevented by validating the email address
+  # before saving it into the database
+  xcontext "customer with attempted XSS", js: true do
     let(:xss_string) { %(<script>throw("XSS")</script>) }
     before do
       user.update!(email: xss_string)

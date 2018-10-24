@@ -5,10 +5,11 @@ require 'spec_helper'
 describe 'Users', type: :feature do
   stub_authorization!
   let!(:country) { create(:country) }
-  let!(:user_a) { create(:user_with_addresses, email: 'a@example.com') }
-  let!(:user_b) { create(:user_with_addresses, email: 'b@example.com') }
+  let!(:user_a) { create(:user, :with_addresses) }
+  let!(:user_b) { create(:user, :with_addresses) }
+
   let!(:admin_role) { create(:role, name: 'admin') }
-  let!(:user_role) { create(:role, name: 'user') }
+  let!(:user_role)  { create(:role, name: 'user')  }
 
   let(:order) { create(:completed_order_with_totals, user: user_a, number: "R123") }
 
@@ -145,17 +146,18 @@ describe 'Users', type: :feature do
     it_behaves_like 'a user page'
 
     it 'can edit the user email' do
-      fill_in 'user_email', with: 'a@example.com99'
+      fill_in 'user_email', with: 'a99@example.com'
       click_button 'Update'
 
-      expect(user_a.reload.email).to eq 'a@example.com99'
+      expect(user_a.reload.email).to eq 'a99@example.com'
       expect(page).to have_text 'Account updated'
-      expect(page).to have_field('user_email', with: 'a@example.com99')
+      expect(page).to have_field('user_email', with: 'a99@example.com')
     end
 
     it 'can edit the user password' do
-      fill_in 'user_password', with: 'welcome'
-      fill_in 'user_password_confirmation', with: 'welcome'
+      # 8 chars or more
+      fill_in 'user_password',              with: 'welcometothejungle'
+      fill_in 'user_password_confirmation', with: 'welcometothejungle'
       click_button 'Update'
 
       expect(page).to have_text 'Account updated'

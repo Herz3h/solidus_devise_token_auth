@@ -29,7 +29,15 @@ module Spree
       module Request
         include CustomAbility
 
-        def stub_authorization!
+        def stub_api_authentication!
+          before do
+            allow_any_instance_of(Spree::Api::BaseController)
+              .to receive("current_api_#{Spree.user_class.to_s.underscore.gsub('/', '_')}")
+              .and_return(create(:user))
+          end
+        end
+
+        def stub_ability_authorization!
           ability = build_ability
 
           after(:all) do
@@ -39,13 +47,11 @@ module Spree
           before(:all) do
             Spree::Ability.register_ability(ability)
           end
+        end
 
-          before do
-            allow(Spree.user_class).to receive(:find_by).
-                                         and_return(Spree.user_class.new(email: 'lubie@placki.com', password: 'lubieplacki123'))
-            allow_any_instance_of(Spree.user_class).to receive(:valid_token?).
-                                         and_return(true)
-          end
+        def stub_authorization!
+          stub_ability_authorization!
+          stub_api_authentication!
         end
 
         def custom_authorization!(&block)

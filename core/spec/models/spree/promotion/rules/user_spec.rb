@@ -31,8 +31,8 @@ RSpec.describe Spree::Promotion::Rules::User, type: :model do
 
     # Regression test for https://github.com/spree/spree/issues/3885
     it "can assign to user_ids" do
-      user1 = Spree::LegacyUser.create!(email: "test1@example.com")
-      user2 = Spree::LegacyUser.create!(email: "test2@example.com")
+      user1 = Spree::LegacyUser.create!(email: "test1@example.com", password: 'lubieplacki')
+      user2 = Spree::LegacyUser.create!(email: "test2@example.com", password: 'lubieplacki')
       rule.user_ids = "#{user1.id}, #{user2.id}"
     end
   end

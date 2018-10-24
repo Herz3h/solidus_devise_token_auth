@@ -3,9 +3,9 @@
 require 'spec_helper'
 
 describe "Cancelling + Resuming", type: :feature do
-  stub_authorization!
+  stub_ability_authorization!
 
-  let(:user) { build_stubbed(:user, id: 123) }
+  let(:user) { create(:user) }
 
   before do
     allow(user).to receive(:has_spree_role?).and_return(true)
@@ -23,6 +23,7 @@ describe "Cancelling + Resuming", type: :feature do
 
   it "can cancel an order" do
     visit spree.edit_admin_order_path(order.number)
+
     click_button 'Cancel'
     within(".additional-info") do
       expect(find('dt#order_status + dd')).to have_content("Canceled")

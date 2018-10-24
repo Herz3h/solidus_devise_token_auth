@@ -12,6 +12,7 @@
 //= require solidus_admin/flatpickr/flatpickr
 //= require prism
 //= require spree
+//
 //= require spree/backend/namespaces
 //= require spree/backend/translation
 //= require spree/backend/backbone-overrides
@@ -47,6 +48,7 @@
 //= require spree/backend/payments/new
 //= require spree/backend/product_picker
 //= require spree/backend/progress
+//= require spree/backend/devise_token_auth
 //= require spree/backend/promotions
 //= require spree/backend/promotions/activation
 //= require spree/backend/returns/return_item_selection

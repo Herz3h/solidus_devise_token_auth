@@ -21,8 +21,8 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.2.2'
   s.required_rubygems_version = '>= 1.8.23'
 
-  s.add_dependency 'solidus_api', s.version
-  s.add_dependency 'solidus_core', s.version
+  s.add_dependency 'solidus_api_devise_token_auth', s.version
+  s.add_dependency 'solidus_core_devise_token_auth', s.version
 
   s.add_dependency 'coffee-rails'
   s.add_dependency 'font-awesome-rails', '~> 4.0'
@@ -33,4 +33,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'autoprefixer-rails'
   s.add_dependency 'handlebars_assets', '~> 0.23'
+
+  s.add_development_dependency 'pry'
 end

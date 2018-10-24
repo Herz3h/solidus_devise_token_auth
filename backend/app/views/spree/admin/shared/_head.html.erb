@@ -43,7 +43,14 @@
 <%= render "spree/admin/shared/js_locale_data" %>
 
 <%= javascript_tag do -%>
-  Spree.env = "<%= Rails.env %>";
+  Spree.accessTokenKeys = ['access-token', 'client', 'expiry', 'uid'];
+  Spree.accessTokenData = {};
+
+  <% if try_spree_current_user.present? %>
+    Spree.accessTokenData = <%= raw(try_spree_current_user.try(:create_new_auth_token).try(:to_json)) %>;
+  <% end %>
+
+  Spree.env = '<%= Rails.env %>';
 <% end %>
 
 <%= yield :head %>

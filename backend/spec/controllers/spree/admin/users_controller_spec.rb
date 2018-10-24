@@ -72,42 +72,42 @@ describe Spree::Admin::UsersController, type: :controller do
       end
 
       it "can create user with roles" do
-        post :create, params: { user: { first_name: "Bob", spree_role_ids: [dummy_role.id] } }
+        post :create, params: { user: { first_name: "Bob", password: 'lubieplacki', email: 'lubie@placki.com', spree_role_ids: [dummy_role.id] } }
         expect(user.spree_roles).to eq([dummy_role])
       end
 
       it "can create user without roles" do
-        post :create, params: { user: { first_name: "Bob" } }
+        post :create, params: { user: { first_name: "Bob", password: 'lubieplacki', email: 'lubie@placki.com' } }
         expect(user.spree_roles).to eq([])
       end
     end
 
     context "when the user cannot manage roles" do
       it "cannot assign users roles" do
-        post :create, params: { user: { first_name: "Bob", spree_role_ids: [dummy_role.id] } }
+        post :create, params: { user: { first_name: "Bob", password: 'lubieplacki', email: 'lubie@placki.com', spree_role_ids: [dummy_role.id] } }
         expect(user.spree_roles).to eq([])
       end
 
       it "can create user without roles" do
-        post :create, params: { user: { first_name: "Bob" } }
+        post :create, params: { user: { first_name: "Bob", password: 'lubieplacki', email: 'lubie@placki.com' } }
         expect(user.spree_roles).to eq([])
       end
     end
 
     it "can create a shipping_address" do
-      post :create, params: { user: { ship_address_attributes: valid_address_attributes } }
+      post :create, params: { user: { ship_address_attributes: valid_address_attributes, password: 'lubieplacki', email: 'lubie@placki.com' } }
       expect(user.reload.ship_address.city).to eq('New York')
     end
 
     it "can create a billing_address" do
-      post :create, params: { user: { bill_address_attributes: valid_address_attributes } }
+      post :create, params: { user: { bill_address_attributes: valid_address_attributes, password: 'lubieplacki', email: 'lubie@placki.com' } }
       expect(user.reload.bill_address.city).to eq('New York')
     end
 
     it "can set stock locations" do
       location = Spree::StockLocation.create(name: "my_location")
       location_2 = Spree::StockLocation.create(name: "my_location_2")
-      post :create, params: { user: { stock_location_ids: [location.id, location_2.id] } }
+      post :create, params: { user: { stock_location_ids: [location.id, location_2.id], password: 'lubieplacki', email: 'lubie@placki.com' } }
       expect(user.stock_locations).to match_array([location, location_2])
     end
   end

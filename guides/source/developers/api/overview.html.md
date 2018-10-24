@@ -21,41 +21,11 @@ role of `admin`.
 
 ### Requests
 
-To make a request to the API, pass a `X-Spree-Token` header and a Spree API key
-along with the request:
+To make a request to the API, follow the rules described in the [devise_token_auth docs](https://devise-token-auth.gitbook.io/devise-token-auth/usage).
 
-```bash
-curl --header "X-Spree-Token: <key>" http://yourstore.com/api/products/1
-```
-
-Alternatively, you can pass through the token as a URL parameter if you are
-unable to pass it through a header:
-
-```bash
-curl http://example.com/api/products/1?token=<key>
-```
-
-The `token` parameter allows the request to assume the same level of permissions
-as the actual user to whom the token belongs.
-
-### Authentication
-
-Any user with a `Spree::Role` of `admin` has an API key generated for them when
-their account is created.You can get the key value from the user table's
-`spree_api_key` column.
-
-For example, if you use the `Spree::User` model provided by the
-[`solidus_auth_devise` gem][solidus-auth-devise], you can access the user's API
-key in your Rails console with a command like this:
-
-```ruby
-Spree::User.find(1).spree_api_key
-```
-
-Store administrators can view or regenerate API keys from the `solidus_backend`
-interface from the **Users** page by editing a user with the admin role.
-
-[solidus-auth-devise]: https://github.com/solidusio/solidus_auth_devise
+Basically, it comes down to either using one of the integration libraries like [redux-token-auth](https://github.com/kylecorbelli/redux-token-auth)
+or writing your own mechanism for the API client. It's pretty simple, though, and basically requires you
+to exchange three headers on each request - `uid`, `client` and `access-token`.
 
 ## Endpoint rules
 

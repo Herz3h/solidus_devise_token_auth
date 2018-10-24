@@ -26,7 +26,9 @@ feature 'Promotion with user rule', js: true do
     end
   end
 
-  context "with an attempted XSS" do
+  # this is now prevented by validating the email address
+  # before saving it into the database
+  xcontext "with an attempted XSS" do
     let(:xss_string) { %(<script>throw("XSS")</script>) }
     given!(:user) { create(:user, email: xss_string) }
 

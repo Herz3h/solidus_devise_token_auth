@@ -24,9 +24,9 @@ class FooAbility
 end
 
 RSpec.describe Spree::Ability, type: :model do
-  let(:user) { build(:user) }
+  let(:user)    { create(:user) }
   let(:ability) { Spree::Ability.new(user) }
-  let(:token) { nil }
+  let(:token)   { nil }
 
   after(:each) {
     Spree::Ability.abilities = Set.new
@@ -59,7 +59,7 @@ RSpec.describe Spree::Ability, type: :model do
     let(:resource) { Object.new }
 
     context 'with admin user' do
-      let(:user) { build :admin_user }
+      let(:user) { create(:user, :admin) }
       it_should_behave_like 'access granted'
       it_should_behave_like 'index allowed'
     end

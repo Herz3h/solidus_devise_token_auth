@@ -3,7 +3,13 @@
 require 'spec_helper'
 
 feature 'Promotion with option value rule' do
-  stub_authorization!
+  let(:user) { create(:user) }
+
+  before do
+    allow_any_instance_of(Spree::Admin::BaseController).to receive(:try_spree_current_user).and_return(user)
+  end
+
+  stub_ability_authorization!
 
   given(:variant) { create :variant }
   given!(:product) { variant.product }
@@ -17,6 +23,7 @@ feature 'Promotion with option value rule' do
 
   scenario "adding an option value rule", js: true do
     select "Option Value(s)", from: "Add rule of type"
+
     within("#rules_container") { click_button "Add" }
 
     within("#rules_container .promotion-block") do
