@@ -6,7 +6,44 @@
 - [Join our Slack](http://slack.solidus.io/) ([solidusio.slack.com](http://solidusio.slack.com))
 - [solidus-security](https://groups.google.com/forum/#!forum/solidus-security) mailing list
 
-## Summary
+## devise_token_auth fork summary
+
+Background story tl;dr: I wanted to use `solidus_api` along with provided admin panel (`solidus_backend`), but the default api authentication mechanism
+did not satisfy my security and usage needs at all. At first, I only wanted to fork the `solidus_api` gem and integrate it with [devise_token_auth](https://github.com/lynndylanhurley/devise_token_auth),
+but it turned out that the whole solidus project heavily relies on this default `spree_api_key` thing - so here it is, a `solidus` fork, extensively revised to be fully compliant with `devise_token_auth`,
+replacing the `spree_api_key` mechanism also in stuff like `solidus_backend`. The test suite is fully passing; I have also upgraded it a little to test stuff (like authentication) that it used to just stub previously.
+
+There are so many changes that it can't simply be merged to the upstream repository - people use that `spree_api_key` in their own integrations, so this fork is usable mostly when you're starting from scratch
+and want to use solidus with devise_token_auth or you want to use the solidus_api for the first time, or if you want to refactor your existing `solidus_api` app to become more secure.
+
+As of 24.10.2018 the upstream repository is merged, but if you need some latest solidus features and nobody updates this repo from the upstream, feel free to do it yourself - it shouldn't take much more
+than just resolving some git conflicts, bumping the version and submitting a pull request here.
+
+## So how do I use this with `devise_token_auth`?
+
+To add solidus_devise_token_auth, begin with a Rails 5 application and a database configured and created. Add the following to your Gemfile:
+
+```ruby
+gem 'solidus_devise_token_auth'
+gem 'solidus_auth_devise'
+```
+
+Then basically just follow the original solidus guides, watching out for api authentication (described [here](https://github.com/skycocker/solidus/blob/master/guides/source/developers/api/overview.html.md)).
+
+## How do I use just specific components?
+
+Every piece is rebuilt and available on rubygems:
+
+```ruby
+gem 'solidus_api_devise_token_auth'
+gem 'solidus_frontend_devise_token_auth'
+gem 'solidus_backend_devise_token_auth'
+gem 'solidus_core_devise_token_auth'
+gem 'solidus_sample_devise_token_auth'
+```
+
+
+## Solidus summary
 
 Solidus is a complete open source ecommerce solution built with Ruby on Rails.
 It is a fork of [Spree](https://spreecommerce.org).
