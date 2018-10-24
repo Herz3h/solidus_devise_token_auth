@@ -6,12 +6,12 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.name        = 'solidus_sample_devise_token_auth'
   s.version     = Spree.solidus_version
-  s.summary     = 'Sample data (including images) for use with Solidus.'
+  s.summary     = 'Sample data (including images) for use with Solidus (devise_token_auth revised version)'
   s.description = s.summary
 
-  s.author      = 'Solidus Team'
-  s.email       = 'contact@solidus.io'
-  s.homepage    = 'http://solidus.io/'
+  s.author      = 'Michał Siwek (skycocker)'
+  s.email       = 'mike21@aol.pl'
+  s.homepage    = 'https://github.com/skycocker/solidus/tree/master/sample'
   s.license     = 'BSD-3-Clause'
 
   s.files        = `git ls-files`.split("\n")
