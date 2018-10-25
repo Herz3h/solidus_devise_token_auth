@@ -61,11 +61,15 @@ class AddDeviseTokenAuthToSpreeUsers < ActiveRecord::Migration[5.2]
     end
 
     if column_exists?(Spree.user_class.table_name.to_sym, :uid) && column_exists?(Spree.user_class.table_name.to_sym, :provider)
-      add_index Spree.user_class.table_name.to_sym, %i(uid provider), unique: true
+      unless index_exists?(Spree.user_class.table_name.to_sym, %i(uid provider))
+        add_index Spree.user_class.table_name.to_sym, %i(uid provider), unique: true
+      end
     end
 
     if column_exists?(Spree.user_class.table_name.to_sym, :reset_password_token)
-      add_index Spree.user_class.table_name.to_sym, :reset_password_token, unique: true
+      unless index_exists?(Spree.user_class.table_name.to_sym, :reset_password_token)
+        add_index Spree.user_class.table_name.to_sym, :reset_password_token, unique: true
+      end
     end
   end
 end
