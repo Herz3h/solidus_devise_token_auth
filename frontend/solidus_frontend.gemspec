@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'solidus_api_devise_token_auth', s.version
   s.add_dependency 'solidus_core_devise_token_auth', s.version
 
+  s.add_dependency 'turbolinks'
   s.add_dependency 'canonical-rails', '~> 0.2.0'
   s.add_dependency 'font-awesome-rails', '~> 4.0'
   s.add_dependency 'jquery-rails'

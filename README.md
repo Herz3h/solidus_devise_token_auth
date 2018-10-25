@@ -28,10 +28,14 @@ gem 'solidus_devise_token_auth'
 gem 'solidus_auth_devise_devise_token_auth'
 ```
 
-Because of the gem name being different, you have to include this in your `config/application.rb`:
+Because of the gem name being different, you have to include this in your `config/application.rb` (depending on what you want to use):
 
 ```ruby
 require 'solidus_core'
+require 'solidus_api'
+require 'solidus_backend'
+require 'solidus_frontend'
+require 'solidus_sample'
 ```
 
 Then basically just follow the original solidus guides, watching out for api authentication (described [here](https://github.com/skycocker/solidus/blob/master/guides/source/developers/api/overview.html.md)).
