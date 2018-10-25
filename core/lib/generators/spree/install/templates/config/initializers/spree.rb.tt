@@ -1,6 +1,8 @@
 # Configure Solidus Preferences
 # See http://docs.solidus.io/Spree/AppConfiguration.html for details
 
+require 'solidus_core'
+
 Spree.config do |config|
   # Core:
 
