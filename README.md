@@ -25,7 +25,7 @@ To add solidus_devise_token_auth, begin with a Rails 5 application and a databas
 
 ```ruby
 gem 'solidus_devise_token_auth'
-gem 'solidus_auth_devise_devise_token_auth'
+gem 'solidus_auth_devise_devise_token_auth' # ain't my naming convention skills sick?
 ```
 
 Because of the gem name being different, you have to include this in your `config/application.rb` (depending on what you want to use):
@@ -36,6 +36,7 @@ require 'solidus_api'
 require 'solidus_backend'
 require 'solidus_frontend'
 require 'solidus_sample'
+require 'solidus_auth_devise'
 ```
 
 Then basically just follow the original solidus guides, watching out for api authentication (described [here](https://github.com/skycocker/solidus/blob/master/guides/source/developers/api/overview.html.md)).
