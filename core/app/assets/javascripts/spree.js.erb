@@ -42,11 +42,15 @@ Spree.ajax = function(url, options) {
     options = url;
     url = undefined;
   }
+
+  var authHeaders = {};
+  for (var key in Spree.accessTokenData) {
+    authHeaders[key] = Spree.accessTokenData[key];
+  }
+
   options = options || {};
   options = $.extend(options, {
-    headers: {
-      "X-Spree-Token": Spree.api_key
-    }
+    headers: authHeaders,
   });
   return $.ajax(url, options);
 };

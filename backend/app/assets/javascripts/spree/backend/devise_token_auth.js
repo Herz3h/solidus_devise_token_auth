@@ -1,10 +1,4 @@
 Spree.ready(function() {
-  var appendAuthHeaders = function(xhr, settings) {
-    for (var key in Spree.accessTokenData) {
-      xhr.setRequestHeader(key, Spree.accessTokenData[key]);
-    }
-  };
-
   var updateAuthCredentials = function(ev, xhr, settings) {
     $("#progress").hide();
 
@@ -28,9 +22,6 @@ Spree.ready(function() {
     }
 
   };
-
-  // intercept requests to the API, append auth headers
-  $.ajaxSetup({ beforeSend: appendAuthHeaders });
 
   // update auth creds after each request to the API
   $(document).ajaxComplete(updateAuthCredentials);
