@@ -43,7 +43,7 @@
 <%= render "spree/admin/shared/js_locale_data" %>
 
 <%= javascript_tag do -%>
-  Spree.accessTokenKeys = ['access-token', 'client', 'expiry', 'uid'];
+  Spree.accessTokenKeys = ['access-token'];
   Spree.accessTokenData = {};
 
   <% if try_spree_current_user.present? %>
