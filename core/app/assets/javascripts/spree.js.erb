@@ -37,20 +37,25 @@ Spree.url = function(uri, query) {
   return uri;
 };
 
+Spree.accessTokenHeaders = function() {
+  var authHeaders = {};
+
+  for (var key in Spree.accessTokenData) {
+    authHeaders[key] = Spree.accessTokenData[key];
+  }
+
+  return authHeaders;
+};
+
 Spree.ajax = function(url, options) {
   if (typeof url === "object") {
     options = url;
     url = undefined;
   }
 
-  var authHeaders = {};
-  for (var key in Spree.accessTokenData) {
-    authHeaders[key] = Spree.accessTokenData[key];
-  }
-
   options = options || {};
   options = $.extend(options, {
-    headers: authHeaders,
+    headers: Spree.accessTokenHeaders(),
   });
   return $.ajax(url, options);
 };
