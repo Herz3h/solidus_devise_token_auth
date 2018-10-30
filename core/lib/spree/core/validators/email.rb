@@ -23,8 +23,10 @@ module Spree
 end
 
 # @private
-EmailValidator = ActiveSupport::Deprecation::DeprecatedConstantProxy.new(
-  'EmailValidator',
-  'Spree::EmailValidator',
-  message: "EmailValidator is deprecated! Use Spree::EmailValidator instead.\nChange `validates :email, email: true` to `validates :email, 'spree/email' => true`\n"
-)
+unless defined?(EmailValidator)
+  EmailValidator = ActiveSupport::Deprecation::DeprecatedConstantProxy.new(
+    'EmailValidator',
+    'Spree::EmailValidator',
+    message: "EmailValidator is deprecated! Use Spree::EmailValidator instead.\nChange `validates :email, email: true` to `validates :email, 'spree/email' => true`\n"
+  )
+end
